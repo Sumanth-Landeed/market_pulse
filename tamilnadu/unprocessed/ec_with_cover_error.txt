@@ -1,0 +1,3 @@
+Extraction Error: File not found: PDF file not found: source/ec_with_cover.pdf
+Original file: source/ec_with_cover.pdf
+Moved to: unprocessed/ec_with_cover.pdf

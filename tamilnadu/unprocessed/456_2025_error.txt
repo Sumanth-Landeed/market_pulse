@@ -1,0 +1,3 @@
+Extraction Error: PDF extraction validation failed
+Document ID: 456/2025
+Original file kept in: source/456_2025_source_failed.pdf

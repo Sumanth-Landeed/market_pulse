@@ -1,0 +1,3 @@
+Extraction Error: Error reading PDF: EOF marker not found
+Original file: source/corrupted.pdf
+Moved to: unprocessed/corrupted.pdf
