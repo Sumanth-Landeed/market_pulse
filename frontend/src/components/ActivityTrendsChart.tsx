@@ -36,6 +36,7 @@ export function ActivityTrendsChart() {
         },
       });
       
+      
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data.trendData) {

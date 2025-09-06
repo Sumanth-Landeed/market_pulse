@@ -67,9 +67,20 @@ async def get_top10_market_value(date: Optional[str] = None):
         if date:
             target_date_str = date
         else:
-            target_date_str = datetime.now().strftime("%Y-%m-%d") # Changed format to YYYY-MM-DD
+            target_date_str = datetime.now().strftime("%d-%m-%Y") # Changed format to DD-MM-YYYY
         
-        target_datetime_obj = datetime.strptime(target_date_str, "%Y-%m-%d")
+        # Parse the target_date_str into a datetime object
+        target_date_obj = datetime.strptime(target_date_str, "%d-%m-%Y")
+        start_of_day = target_date_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = target_date_obj.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        match_query_log = {
+            "dateOfRegistration_date": {
+                "$gte": start_of_day,
+                "$lte": end_of_day
+            }
+        }
+        logger.info(f"Match Query for top10: {match_query_log}") # Log the match query
 
         pipeline = [
             {
@@ -79,21 +90,22 @@ async def get_top10_market_value(date: Optional[str] = None):
                             "dateString": "$dateOfRegistration",
                             "format": "%d-%m-%Y"
                         }
-                    }
+                    },
+                    "considerationValue_numeric": {"$convert": {"input": "$considerationVal", "to": "double", "onError": 0, "onNull": 0}}
                 }
             },
-            {"$match": {"dateOfRegistration_date": {"$eq": target_datetime_obj}}}, # Match by converted date object
-            {"$sort": {"considerationVal": -1}},
+            {"$match": {"dateOfRegistration_date": {"$gte": start_of_day, "$lte": end_of_day}}}, # Match by converted date object
+            {"$sort": {"considerationValue_numeric": -1}},
             {"$limit": 10},
             {
                 "$project": {
                     "_id": {"$toString": "$_id"},
                     "sroCode": "$sroCode",
-                    "considerationValue": "$considerationVal",
+                    "considerationValue": "$considerationValue_numeric",
                     "pricePerExtent": {
                         "$cond": {
                             "if": {"$ne": ["$extent", 0]},
-                            "then": {"$divide": [{"$convert": {"input": "$considerationVal", "to": "double", "onError": 0, "onNull": 0}}, {"$convert": {"input": "$extent", "to": "double", "onError": 0, "onNull": 0}}]},
+                            "then": {"$divide": ["$considerationValue_numeric", {"$convert": {"input": "$extent", "to": "double", "onError": 0, "onNull": 0}}]},
                             "else": 0
                         }
                     },
@@ -102,6 +114,7 @@ async def get_top10_market_value(date: Optional[str] = None):
                 }
             }
         ]
+        logger.info(f"Pipeline for top10: {pipeline}") # Log the pipeline
 
         documents = list(collection.aggregate(pipeline))
         return {"today": target_date_str, "top_documents": documents}
@@ -130,22 +143,17 @@ async def get_market_value_summary(
 
         today = datetime.now()
         if not startDate or not endDate:
-            end_date_obj = today
-            start_date_obj = today - timedelta(days=7)
-            start_date_str = start_date_obj.strftime("%Y-%m-%d") # Changed format to YYYY-MM-DD
-            end_date_str = end_date_obj.strftime("%Y-%m-%d")   # Changed format to YYYY-MM-DD
+            end_date_obj = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            start_date_obj = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
         else:
-            # Assuming input dates are already in DD-MM-YYYY format, convert to YYYY-MM-DD for consistency
-            start_date_obj = datetime.strptime(startDate, "%d-%m-%Y")
-            end_date_obj = datetime.strptime(endDate, "%d-%m-%Y")
-            start_date_str = start_date_obj.strftime("%Y-%m-%d")
-            end_date_str = end_date_obj.strftime("%Y-%m-%d")
+            start_date_obj = datetime.strptime(startDate, "%d-%m-%Y").replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date_obj = datetime.strptime(endDate, "%d-%m-%Y").replace(hour=23, minute=59, second=59, microsecond=999999)
 
         # Build match query
         match_query = {
             "dateOfRegistration_date": {
-                "$gte": {"$dateFromString": {"dateString": start_date_str, "format": "%Y-%m-%d"}},
-                "$lte": {"$dateFromString": {"dateString": end_date_str, "format": "%Y-%m-%d"}}
+                "$gte": start_date_obj,
+                "$lte": end_date_obj
             }
         }
         if sroCode:
@@ -248,21 +256,16 @@ async def get_top10_detailed_market_value(
 
         today = datetime.now()
         if not startDate or not endDate:
-            end_date_obj = today
-            start_date_obj = today - timedelta(days=7)
-            start_date_str = start_date_obj.strftime("%Y-%m-%d") # Changed format to YYYY-MM-DD
-            end_date_str = end_date_obj.strftime("%Y-%m-%d")   # Changed format to YYYY-MM-DD
+            end_date_obj = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            start_date_obj = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
         else:
-            # Assuming input dates are already in DD-MM-YYYY format, convert to YYYY-MM-DD for consistency
-            start_date_obj = datetime.strptime(startDate, "%d-%m-%Y")
-            end_date_obj = datetime.strptime(endDate, "%d-%m-%Y")
-            start_date_str = start_date_obj.strftime("%Y-%m-%d")
-            end_date_str = end_date_obj.strftime("%Y-%m-%d")
+            start_date_obj = datetime.strptime(startDate, "%d-%m-%Y").replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date_obj = datetime.strptime(endDate, "%d-%m-%Y").replace(hour=23, minute=59, second=59, microsecond=999999)
 
         match_query = {
             "dateOfRegistration_date": {
-                "$gte": {"$dateFromString": {"dateString": start_date_str, "format": "%Y-%m-%d"}},
-                "$lte": {"$dateFromString": {"dateString": end_date_str, "format": "%Y-%m-%d"}}
+                "$gte": start_date_obj,
+                "$lte": end_date_obj
             }
         }
         if sroCode:
@@ -319,7 +322,7 @@ async def get_top10_detailed_market_value(
         for i, doc in enumerate(documents):
             doc["ranking"] = i + 1
 
-        return {"startDate": start_date_str, "endDate": end_date_str, "sroCode": sroCode, "top_documents": documents}
+        return {"startDate": startDate, "endDate": endDate, "sroCode": sroCode, "top_documents": documents}
 
     except Exception as e:
         return {"error": str(e)}
@@ -392,6 +395,8 @@ async def get_data_range():
         else:
             return {"min_date": None, "max_date": None}
 
+
+
     except Exception as e:
         return {"error": str(e)}
     finally:
@@ -423,26 +428,20 @@ async def get_timeseries_top10_sum(
 
         today = datetime.now()
         if not startDate or not endDate:
-            end_date_obj = today
-            start_date_obj = today - timedelta(days=7)
-            start_date_str = start_date_obj.strftime("%Y-%m-%d")
-            end_date_str = end_date_obj.strftime("%Y-%m-%d")
+            end_date_obj = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            start_date_obj = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
         else:
-            start_date_obj = datetime.strptime(startDate, "%d-%m-%Y")
-            end_date_obj = datetime.strptime(endDate, "%d-%m-%Y")
-            start_date_str = start_date_obj.strftime("%Y-%m-%d")
-            end_date_str = end_date_obj.strftime("%Y-%m-%d")
+            start_date_obj = datetime.strptime(startDate, "%d-%m-%Y").replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date_obj = datetime.strptime(endDate, "%d-%m-%Y").replace(hour=23, minute=59, second=59, microsecond=999999)
 
         match_query = {
             "dateOfRegistration_date": {
-                "$gte": {"$dateFromString": {"dateString": start_date_str, "format": "%Y-%m-%d"}},
-                "$lte": {"$dateFromString": {"dateString": end_date_str, "format": "%Y-%m-%d"}}
+                "$gte": start_date_obj,
+                "$lte": end_date_obj
             }
         }
         if sroCode:
             match_query["sroCode"] = sroCode
-
-        print(f"Match Query for timeseries_top10_sum: {match_query}") # Log the match query
 
         pipeline = [
             {
@@ -451,40 +450,43 @@ async def get_timeseries_top10_sum(
                         "$dateFromString": {
                             "dateString": "$dateOfRegistration",
                             "format": "%d-%m-%Y"
+                            
                         }
                     },
                     "considerationValue_numeric": {"$convert": {"input": "$considerationVal", "to": "double", "onError": 0, "onNull": 0}}
                 }
             },
             {"$match": match_query},
-            {"$count": "documentsAfterMatch"} # Temporary debug stage
+            # {"$count": "documentsAfterMatch"} # Temporary debug stage
             # Commented out for debugging
-            # {
-            #     "$group": {
-            #         "_id": "$dateOfRegistration_date",
-            #         "dailyConsiderationValues": {"$push": "$considerationValue_numeric"}
-            #     }
-            # },
-            # {"$sort": {"_id": 1}}, # Sort by date ascending for time-series
-            # {
-            #     "$project": {
-            #         "_id": 0,
-            #         "date": {"$dateToString": {"format": "%d-%m-%Y", "date": "$_id"}},
-            #         "sumTop10ConsiderationValue": {
-            #             "$sum": {
-            #                 "$slice": [
-            #                     {"$sortArray": {"input": "$dailyConsiderationValues", "sortBy": -1}},
-            #                     10
-            #                 ]
-            #             }
-            #         }
-            #     }
-            # }
+            {
+                "$group": {
+                    "_id": "$dateOfRegistration_date",
+                    "dailyConsiderationValues": {"$push": "$considerationValue_numeric"}
+                }
+            },
+            {"$sort": {"_id": 1}}, # Sort by date ascending for time-series
+            {
+                "$project": {
+                    "_id": 0,
+                    "date": {"$dateToString": {"format": "%d-%m-%Y", "date": "$_id"}},
+                    "sumTop10ConsiderationValue": {
+                        "$sum": {
+                            "$slice": [
+                                {"$sortArray": {"input": "$dailyConsiderationValues", "sortBy": -1}},
+                                10
+                            ]
+                        }
+                    }
+                }
+            }
         ]
+        logger.info(f"Match Query for timeseries_top10_sum: {match_query}") # Log the match query
+        logger.info(f"Pipeline for timeseries_top10_sum: {pipeline}") # Log the pipeline
 
         result = list(collection.aggregate(pipeline))
 
-        return {"debug_count": result}
+        return {"timeseries_data": result}
 
     except Exception as e:
         return {"error": str(e)}
