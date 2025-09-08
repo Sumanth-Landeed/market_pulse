@@ -64,6 +64,7 @@ for doc in src_collection.find({}):
         "state": doc.get("state"),
         "districtCode": doc.get("districtCode"),
         "sroCode": doc.get("sroCode"),
+        "sroName": doc.get("sroName"),
         "docno": doc.get("docno"),
         "dateOfRegistration": doc.get("dateOfRegistration"),
         "marketValue": doc.get("marketValue"),

@@ -1,0 +1,802 @@
+<html>
+
+<head>
+    <script language="javascript" src="/resources/js/validations.js"></script>
+    <script language="javascript" src="/resources/js/jquery-1.4.2.min.js"></script>
+    <!-- CSS FILES -->
+
+    <link rel="stylesheet" href="/resources/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/resources/css/style.css">
+    <link rel="stylesheet" href="/resources/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/resources/css/animate.css" />
+    <link rel="shortcut icon" href="/resources/img/favicon.ico">
+
+
+    <script type="text/javascript" src="/resources/js/jquery-1.10.2.min.js"></script>
+    <script src="/resources/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/resources/js/jquery.smartmenus.min.js"></script>
+    <script type="text/javascript" src="/resources/js/jquery.smartmenus.bootstrap.min.js"></script>
+
+
+    <!-- WARNING: Wow.js doesn't work in IE 9 or less -->
+    <!--[if gte IE 9 | !IE ]><!-->
+    <script type="text/javascript" src="/resources/js/wow.min.js"></script>
+    <script>
+        // WOW Animation
+            new WOW().init();
+    </script>
+    <!-- [endif]-->
+
+
+    <script language="javascript">
+        var tableToExcel = (function () {
+                var uri = 'data:application/vnd.ms-excel;base64,'
+                        , template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><meta http-equiv="content-type" content="text/plain; charset=UTF-8"/></head><body><table>{table}</table></body></html>'
+                        , base64 = function (s) {
+                            return window.btoa(unescape(encodeURIComponent(s)))
+                        }
+                , format = function (s, c) {
+                    return s.replace(/{(\w+)}/g, function (m, p) {
+                        return c[p];
+                    })
+                }
+                return function (table, name) {
+                    if (!table.nodeType)
+                        table = document.getElementById(table)
+                    var ctx = {worksheet: name || 'Worksheet', table: table.innerHTML}
+                    window.location.href = uri + base64(format(template, ctx))
+                }
+            })()
+    </script>
+
+    <script>
+        //            function imageFun(rowno,srocode,docno,regyear,bookno){
+            //                var urlString=srocode+"~"+docno+"~"+regyear+"~"+bookno;
+            //                document.forms[0].action="/DeedDetails.do?method=getCCDetails&urlString="+urlString;
+            //                document.forms[0].submit();
+            //                return false;
+            //            }
+
+            function back1() {
+
+                history.back();
+                //history.go(-1);
+            }
+
+            function prn()
+            {
+                //   hideprnbtn();
+                window.print();
+            }
+            //            function saveFile(fname)
+            //            {
+            //                document.execCommand('SaveAs',null,fname);
+            //            }
+
+            //            function hideprnbtn()
+            //            {
+            //                remove.style.display="none";
+            //            }          
+
+            //            function getExcel()
+            //            {                
+            //                document.forms[0].method.value  = "/getDeedDetailsExcel.htm";               
+            //                document.forms[0].submit();                
+            //            } 
+    </script>
+</head>
+
+<body>
+
+
+
+
+
+
+
+
+    <meta http-equiv="cache-control" content="max-age=0" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta http-equiv="expires" content="0" />
+    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+    <meta http-equiv="pragma" content="no-cache" />
+
+
+
+
+
+
+
+
+    <header id="header">
+
+
+        <script src="/resources/js/wow.min.js"></script>
+
+
+        <!-- old version 2024/08/13 -->
+
+        <script src="/resources/js/jquery-3.7.1.js"></script>
+
+        <!--        <div class="container-fluid toprow">
+                <div class="container">
+                    <div class="col-xs-6 col-sm-5 fontlistdiv">
+                        <a href="#" id="btn-increase">A+</a>
+                        <a href="#" id="btn-decrease">A-</a>
+                        <a href="#" id="btn-orig">A</a>
+                        <a href="#" style="background: #fff; color: #000" class="nocolor btn_typo">A</a>
+                        <a href="#" style="background: #000; color: #fff" class="color btn_typo">A</a>
+                    </div>
+                    <div class="col-xs-6 col-sm-7 toprightlinks">                
+                        <div id="top-info" class="clearfix">
+                            <span class="hidden-xs" style="text-align: right;" id="scheduletime"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>-->
+
+
+
+        <!-- Start info-bar -->
+
+        <div class="enquiry">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-6 col-md-6 col-sm-6">
+                        <p>Toll Free No. for Enquiries :
+                            <span><a href="tel:+18005994788" style="color: #fff;"><i class="fa fa-phone"> 1800 599 4788 &nbsp;&nbsp;</i></a><a href="https://wa.me/918247619983" style="color: #fff;"> <i class="fa fa-whatsapp" aria-hidden="true"> 8247619983</i></a></span>
+                        </p>
+                    </div>
+                    <div class="col-lg-6 col-md-6 hidden-xs">
+                        <div class="toprow">
+                            <div class="fontlistdiv">
+                                <a href="#" id="btn-increase">A+</a>
+                                <a href="#" id="btn-decrease">A-</a>
+                                <a href="#" id="btn-orig">A</a>
+                                <a href="#" style="background: #fff; color: #000" class="nocolor btn_typo">A</a>
+                                <a href="#" style="background: #000; color: #fff" class="color btn_typo">A</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--        <div id="info-bar">
+                    <div class="container">
+                        <div>
+                            <div class="col-lg-3 col-md-3 col-sm-2 col-xs-2 top-info">
+                                <a href="/index.html">
+                                    <img src="/resources/img/telanganalogo.png" alt="IGRS Logo" >
+                                </a>
+                            </div>
+                            <div class="col-lg-6 col-md-6 col-sm-8 col-xs-10 dept_info text-center">
+                                <h1>Registration & Stamps Department</h1>
+                                <h2>Government of Telangana</h2>
+                            </div>
+                            <div class="col-lg-3 col-md-3 col-sm-2 hidden-xs dept_min">
+                                    <img src="/resources/img/TS-CM.png" alt="IGRS Logo" >
+                            </div>
+                        </div>
+                    </div>
+                </div>-->
+
+        <div id="info-bar">
+            <div class="container-fluid">
+                <div>
+
+                    <div class="col-lg-3 col-md-2 col-sm-2 col-xs-12 dept_min_cm">
+                        <img src="/resources/img/revanthreddy.jpg" alt="">
+                        <h5>Sri Anumula Revanth Reddy</h5>
+                        <h6>Hon’ble Chief Minister of Telangana</h6>
+                    </div>
+                    <div class="col-lg-6 col-md-8 col-sm-8 col-xs-12 top-info text-center">
+                        <img src="/resources/img/telanganalogo.png" alt="IGRS Logo" class="telangana_emblem">
+                        <img src="/resources/img/telangana-rising.png" alt="Telangana Rising Logo" class="rising_logo"><br/>
+                        <a href="/index.htm">
+
+                            <h1>Registration & Stamps Department</h1>
+                            <h2>Government of Telangana</h2>
+                        </a>
+                    </div>
+                    <!--                    <div class="hidden-lg hidden-md hidden-sm col-xs-12 dept_min1">
+                                            <div>
+                                                <img src="/resources/img/revanthreddy.jpg" alt="">
+                                                <h5>Sri Anumula Revanth Reddy</h5>
+                                                <h6>Hon’ble Chief Minister</h6>
+                                            </div>
+                                        </div>
+                    -->
+                    <div class="col-lg-3 col-md-2 col-sm-2 col-xs-12 dept_min_rev">
+                        <img src="/resources/img/srinivasareddy.jpg" alt="" >
+                        <h5>Sri Ponguleti Srinivasa Reddy</h5>
+                        <h6>Hon’ble Minister for Revenue, Telangana</h6>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!--/#info-bar -->
+
+        <div id="nv-bar">
+            <div class="container">
+                <div class="row">
+
+                    <div class="col-md-12 col-sm-12">
+                        <!-- Navigation
+                        ================================================== -->
+                        <div class="navbar navbar-default navbar-static-top" role="navigation">
+                            <div class="navbar-header">
+                                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                                    <span class="sr-only">Toggle navigation</span>
+                                    <span class="icon-bar"></span>
+                                    <span class="icon-bar"></span>
+                                    <span class="icon-bar"></span>
+                                </button>
+                            </div>
+                            <div class="navbar-collapse collapse">
+                                <ul class="nav navbar-nav">
+
+                                    <li class="active"><a href="/index.htm">Home</a> </li>
+
+
+
+                                    <li><a href="/aboutus.htm" target="_self">About Us</a> </li>
+                                    <li><a href="#"
+                                            target="_self"><span class="data-hover" data-hover="Organization">Organization</span></a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="/structure.htm" target="_self">Structures</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="#"
+                                            target="_self"><span class="data-hover" data-hover="Act_&_Rules">Acts&Rules</span></a>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a href="#" target="_self">Registration Act 1908</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/RegistrationAct.htm" target="_blank">Act</a></li>
+
+                                                    <li><a href="/RegistrationRules.htm" target="_blank">Rules</a></li>
+                                                    <li><a href="#">Standing Orders</a>
+                                                        <ul class="dropdown-menu">
+                                                            <li><a href="/Standing_Orders_1_to_250.htm"
+                                                                    target="_blank">S.O. 1 to 250</a></li>
+                                                            <li><a href="/Standing_Orders_251_to_595.htm"
+                                                                    target="_blank">S.O. 251 to 595</a></li>
+                                                            <li><a href="/Standing_Orders_596_to_853.htm"
+                                                                    target="_blank">S.O. 596 to 853</a></li>
+                                                            <li><a href="/Standing_Orders_854_to_1094.htm"
+                                                                    target="_blank">S.O. 854 to 1094</a></li>
+                                                            <li><a href="/Standing_Orders_1095_to_1369.htm"
+                                                                    target="_blank">S.O. 1095 to 1369</a></li>
+                                                            <li><a href="/Standing_Orders_1370_to_1628.htm"
+                                                                    target="_blank">S.O. 1370 to 1628</a></li>
+                                                        </ul>
+                                                    </li>
+                                                    <li><a href="/registrationImportantCirculars.htm"
+                                                            target="_self">Important Circulars</a></li>
+                                                    <li><a href="/RegistrationForms.htm" target="_blank">Forms</a></li>
+                                                    <li><a href="/registrationProcedure.htm"
+                                                            target="_self">Procedures</a></li>
+                                                    <li><a href="/RegistrationFees.htm" target="_blank">Fees</a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="#" target="_self">Indian Stamp Act 1899</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/StampAct.htm" target="_blank">Act</a></li>
+                                                    <li><a href="/StampRules.htm" target="_blank">Rules</a></li>
+                                                    <li><a href="/stampImportantCirculars.htm" target="_self">Important
+                                                            Circulars</a></li>
+                                                    <li><a href="/stampImportantCirculars.htm" target="_self">Forms</a>
+                                                    </li>
+                                                    <li><a href="/stampProcedure.htm" target="_self">Procedures</a></li>
+                                                    <li><a href="/StampFees.htm" target="_blank">Fees</a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="#" target="_self">Hindu Marriage</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/HinduMarriageAct.htm" target="_blank">Act</a></li>
+                                                    <li><a href="/HinduMarriageRules.htm" target="_blank">Rules</a></li>
+
+                                                    <li><a href="#" target="_self">Forms</a>
+                                                        <ul class="dropdown-menu">
+                                                            <!--<li><a href="/resources/downloads/HinduMarriageAppForm_Disabled.pdf" target="_blank">Application Forms</a></li>-->
+                                                            <li><a href="/HinduMarriageForms.htm"
+                                                                    target="_blank">Others</a></li>
+                                                        </ul>
+                                                    </li>
+                                                    <li><a href="/hinduMarriageProcedure.htm"
+                                                            target="_self">Procedures</a></li>
+                                                    <li><a href="/HinduMarriageFees.htm" target="_blank">Fees</a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="#" target="_self">Special Marriage</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/SpecialMarriageAct.htm" target="_blank">Act</a></li>
+                                                    <li><a href="/SpecialMarriageRules.htm" target="_blank">Rules</a>
+                                                    </li>
+
+                                                    <li><a href="#">Forms</a>
+                                                        <ul class="dropdown-menu">
+                                                            <li><a href="/SpecialMarriageForms.htm"
+                                                                    target="_blank">General Form</a></li>
+                                                            <li><a href="/SpecialMarriageForms_Section5.htm"
+                                                                    target="_blank">Section 5</a></li>
+                                                            <li><a href="/SpecialMarriageForms_Section16.htm"
+                                                                    target="_blank">Section 16</a></li>
+                                                        </ul>
+                                                    </li>
+                                                    <li><a href="/specialMarriageProcedure.htm"
+                                                            target="_self">Procedures</a></li>
+                                                    <li><a href="/SpecialMarriageFees.htm" target="_blank">Fees</a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="#" target="_self">Christian Marriage</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/ChristianMarriageAct.htm" target="_blank">Act</a></li>
+
+                                                </ul>
+                                            </li>
+                                            <li><a href="#" target="_self">Notaries</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/NotariesAct.htm" target="_blank">Act</a></li>
+                                                    <li><a href="/NotariesRules.htm" target="_blank">Rules</a></li>
+
+                                                    <li><a href="/NotariesForm.htm" target="_blank">Forms</a></li>
+
+                                                    <li><a href="/NotariesFees.htm" target="_blank">Fees</a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="#" target="_self">Partnership</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/PartnershipAct.htm" target="_blank">Act</a></li>
+                                                    <li><a href="/PartnershipRules.htm" target="_blank">Rules</a></li>
+
+                                                    <li><a href="#" target="_self">Forms</a>
+                                                        <ul class="dropdown-menu">
+                                                            <li><a href="/PartnershipFormIV.htm" target="_blank">Forms
+                                                                    IV</a></li>
+                                                            <li><a href="/PartnershipFormV.htm" target="_blank">Forms
+                                                                    V</a></li>
+                                                        </ul>
+                                                    </li>
+                                                    <li><a href="/HowToRegisterAFirm.htm" target="_blank">Procedures</a>
+                                                    </li>
+                                                    <li><a href="/PartnershipFees.htm" target="_blank">Fees</a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="#" target="_self">Societies</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/SocietiesAct.htm" target="_blank">Act</a></li>
+                                                    <li><a href="/ap_socities_act_adapted_details.htm"
+                                                            target="_blank">AP Societies Registration Act adaptation
+                                                            GO</a></li>
+
+                                                    <!--<li><a href="/resources/downloads/SocietiesForms.pdf" target="_blank">Forms</a></li>-->
+                                                    <li><a href="/SocietiesForms.htm" target="_blank"> Model MOA &
+                                                            Bye-laws</a></li>
+                                                    <li><a href="/societyRegistrationProcedure.htm"
+                                                            target="_self">Procedures</a></li>
+
+                                                </ul>
+                                            </li>
+                                            <li><a href="#" target="_self">Chit Fund</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/ChitFundAct.htm" target="_blank">Act</a></li>
+                                                    <li><a href="/ChitFundRules.htm" target="_blank">Rules</a></li>
+
+                                                    <li><a href="/ChitFundForms.htm" target="_blank">Forms</a></li>
+
+                                                    <li><a href="/ChitFundFees.htm" target="_blank">Fees</a></li>
+                                                </ul>
+                                            </li>
+
+
+                                        </ul>
+                                    </li>
+                                    <li><a href="#"
+                                            target="_self"><span class="data-hover" data-hover="FAQ's">FAQ's</span></a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="/faqsRegistration.htm" target="_self">Registration</a></li>
+                                            <li><a href="/faqsStamps.htm" target="_self">Stamps</a></li>
+                                            <li><a href="/faqsSociety.htm" target="_self">Society</a></li>
+                                            <li><a href="/faqsMarriage.htm" target="_self">Marriages</a></li>
+                                            <li><a href="/faqsNRI.htm" target="_self">NRI Registrations</a></li>
+                                            <li><a href="/faqsTrust.htm" target="_self">Trusts</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="#"
+                                            target="_self"><span class="data-hover" data-hover="RTI_Act">RTI Act</span></a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="#" target="_self">RTI Act</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/RTI_ACT.htm" target="_blank">Act</a></li>
+                                                    <li><a href="/RTI_ACT_Amendment.htm" target="_blank">Amendment</a>
+                                                    </li>
+                                                    <li><a href="/RTI_Annexure.htm" target="_blank">Handbook Under
+                                                            Section IV <br> (RTI ACT)</a></li>
+                                                    <li><a href="/RTI_Citizen_Dashboard.htm" target="_blank">Handbook
+                                                            Under Section IV Of SRO's <br> (RTI ACT)</a></li>
+                                                </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" target="_self">Fee GO's</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/GO_No8.htm" target="_blank">GO 8</a></li>
+                                                    <li><a href="/GO_No9.htm" target="_blank">GO 9</a></li>
+                                                    <li><a href="/GO_No10.htm" target="_blank">GO 10</a></li>
+                                                    <li><a href="/GO_No22.htm" target="_blank">GO 22</a></li>
+                                                </ul>
+                                            </li>
+                                            <!--                                        <li><a href="/apios.htm" target="_self">PIO's / APIO's</a></li>-->
+                                        </ul>
+                                    </li>
+                                    <li><a href="#"
+                                            target="_self"><span class="data-hover" data-hover="Downloads">Downloads</span></a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="/resources/downloads/RTI_APIO_PIO_AA.pdf" target="_NEW">RTI
+                                                    APIO PIO AA</a></li>
+                                            <li><a href="/Registration_User_Guide.htm" download>Registration User
+                                                    Guide</a></li>
+                                            <li><a href="#" target="_self">Registration Work Flow</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/resources/downloads/Property_Transaction_Advisory.pdf"
+                                                            download>Property Advisory</a></li>
+                                                    <li><a href="/resources/downloads/Slot_Booking_Advisory.pdf"
+                                                            download>Slot Booking Advisory</a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="#" target="_self">User Manuals</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/preregistration_user_guide.htm" download>Pre
+                                                            Registration</a></li>
+                                                    <li><a href="/eChallan_User_Manual.htm" download>eSTAMPS</a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="#" target="_self">Sales Deed</a>
+                                                <ul class="dropdown-menu">
+                                                    <!--<li><a href="/resources/downloads/Sale_Agricultural Lands.doc" download>Agriculture</a></li>-->
+                                                    <li><a href="/Sale_Agricultural_Lands.htm" download>Agriculture</a>
+                                                    </li>
+                                                    <li><a href="/Sale_Flat.htm" download>Flats</a></li>
+                                                    <li><a href="/Sale_House.htm" download>Houses</a></li>
+                                                    <li><a href="/Sale_Plot.htm" download>Open Plots</a></li>
+                                                </ul>
+                                            </li>
+
+                                            <li><a href="#" target="_self">Agreement of Sales</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/AGREEMENT OF SALE FOR OPEN PLOT.htm" download>Open
+                                                            Plots</a></li>
+                                                </ul>
+                                            </li>
+
+                                            <li><a href="#" target="_self">GPA</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/resources/downloads/Attestation_of_special_Power_of_Attorney.doc"
+                                                            download>Attestation of special Power of Attorney</a></li>
+                                                    <li><a href="/resources/downloads/GPA_(without_Sale_etc.,).doc"
+                                                            download>GPA (without Sale etc.,)</a></li>
+                                                    <li><a href="/resources/downloads/GPA_in_favour_of_family_members_to_sell_etc.,_of_the_property.doc"
+                                                            download>GPA in favour of family members to sell etc., of
+                                                            the property</a></li>
+                                                    <li><a href="/resources/downloads/GPA_in_favour_of_other_than_family_members_to_sell_etc.,_of_the_property.doc"
+                                                            download>GPA in favour of other than family members to sell
+                                                            etc., of the property</a></li>
+                                                    <li><a href="/resources/downloads/WILL_DEED.pdf" download>WILL
+                                                            DEED</a></li>
+                                                </ul>
+                                            </li>
+
+                                            <li>
+                                                <a href="#" target="_self">Mortgage</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="#" target="_self">Mortgage with possession</a>
+                                                        <ul class="dropdown-menu">
+                                                            <!--<li><a href="/resources/downloads/Mortgage_Agricultural Land.doc" download>Agriculture</a></li>-->
+                                                            <li><a href="/Mortgage_Agricultural_Land.htm"
+                                                                    download>Agriculture</a></li>
+                                                            <li><a href="/Mortgage_Flats_Houses.htm" download>Flats</a>
+                                                            </li>
+                                                            <li><a href="/Mortgage_Flats_Houses.htm" download>Houses</a>
+                                                            </li>
+                                                            <li><a href="/Mortgage_General.htm" download>General
+                                                                    Modes</a></li>
+                                                        </ul>
+                                                    </li>
+                                                    <li><a href="#" target="_self">Simple Mortgage</a>
+                                                        <ul class="dropdown-menu">
+                                                            <li><a href="/Agricultural_Lands_SimpleMortgage.htm"
+                                                                    download>Agriculture</a></li>
+                                                        </ul>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" target="_self">Gift</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/Gift_to_charitable.htm" download>To Charity</a></li>
+                                                    <li><a href="/Gift_to_family.htm" download>To Family</a></li>
+                                                    <li><a href="/Gift_to_otherthan_family.htm" download>To other than
+                                                            family member</a></li>
+                                                    <li><a href="#">Pure Gift</a>
+                                                        <ul class="dropdown-menu">
+                                                            <li><a href="/PURE_GIFT.htm" download>Agriculture</a></li>
+                                                        </ul>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" target="_self">Lease</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/LEASE_Agricultural_lands.htm" download>Agriculture</a>
+                                                    </li>
+                                                    <li><a href="/resources/downloads/LEASE_Non-Agriculture.doc"
+                                                            download>Non-Agriculture</a></li>
+                                                </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" target="_self">Release Deed</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/Release_deed_agricultural_lands.htm"
+                                                            download>Agriculture</a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="/Form_32A.htm" target="_blank">Download 32-A Form</a></li>
+                                            <li>
+                                                <a href="#" target="_self">Firm Registration</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/FormNo_I.htm" download>Form I</a></li>
+                                                    <li><a href="/FormNo_II.htm" download>Form II</a></li>
+                                                    <li><a href="/FormNo_III.htm" download>Form III</a></li>
+                                                    <li><a href="/FormNo_IV.htm" download>Form IV</a></li>
+                                                    <li><a href="/FormNo_V.htm" download>Form V</a></li>
+                                                    <li><a href="/FormNo_VI.htm" download>Form VI</a></li>
+                                                    <li><a href="/FormNo_VII.htm" download>Form VII</a></li>
+                                                </ul>
+                                            </li>
+                                            <!--                                        <li><a href="#" target="_self">Hindu Marriage</a>
+                                                                                        <ul class="dropdown-menu">
+                                                                                            <li><a href="/resources/downloads/HinduMarriageAppForm.pdf" target="_blank">Form A</a></li>
+                                                                                        </ul>
+                                                                                    </li>-->
+                                            <li><a href="#" target="_self">Market Value</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/Manual_Market_Value.htm" target="_blank">Manual Market
+                                                            Value Form </a></li>
+                                                    <li><a href="/Online_Market_Value.htm" target="_blank">Online Market
+                                                            Value Form </a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="/Indent_Stamp.htm" target="_blank">INDENT FOR STAMP</a></li>
+                                            <li><a href="/CC_Application.htm" target="_blank">CC APPLICATION</a></li>
+                                            <li><a href="/EC_Application.htm" target="_blank">EC APPLICATION</a></li>
+
+                                            <li><a href="#" target="_self">GAZETTE NOTIFICATIONS</a>
+                                                <ul class="dropdown-menu">
+                                                    <li><a href="/resources/downloads/Gazette_notofication.pdf"
+                                                            target="_blank">Download</a></li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+
+                                    </li>
+                                    <li><a href="/citizencharter.htm" target="_self">Citizen's Charter</a></li>
+                                    <li><a href="/readyReckoner.htm" target="_self">Ready Reckoner </a></li>
+                                    <li>
+                                        <a href="#" target="_self">EODB</a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="/eodb.htm" target="_self">Circulars</a></li>
+                                            <li><a href="/eodb_Fee_details.htm" target="_self">Fee</a></li>
+                                            <li><a href="/eodb_Decriminilisation_List.htm" target="_self">Criminal
+                                                    Provision</a></li>
+                                            <li><a href="https://registration.telangana.gov.in/RSDB/eodb_dashboard.htm"
+                                                    target="_new">Dashboard Reports</a></li>
+                                            <li><a href="/eodb_information_wizard.htm" target="_self">Information
+                                                    Wizard</a></li>
+                                        </ul>
+                                    </li>
+                                    <!--<li><a href="/readyReckoner.htm" target="_self">Know Your Stamp Duty</a></li>-->
+                                    <!--<li><a href="/eodb.htm" target="_self">EODB</a></li>-->
+
+
+                                    <!--                                    <li class="dl">-->
+                                    <li class="dl"><a href="/auth_login.htm" target="_self">Login</a></li>
+
+
+
+
+
+                                    <!--<li><a href="/departmentLogin.htm" target="_blank">Department Login</a></li>-->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--/.container -->
+        </div>
+        <!--/#logo-bar -->
+
+
+    </header>
+
+
+
+
+    <!--<table id="tabAbstract" cellpadding="0" cellspacing="0" border="0" width="1100" align="center">
+             <tr>
+             <td align="center" valign="top" width="990">   -->
+    <div class="container info_service1" id="tabAbstract">
+        <div class="">
+
+
+            <!--        <span style="font-size: 18px;">D</span>eed 
+                        <span style="font-size: 18px;">P</span>articulars of a
+                        <span style="font-size: 18px;">D</span>ocument-->
+            <h2>Deed Particulars of a Document</h2>
+
+        </div>
+        <div style="text-align: center;">
+
+            <font style="color: #f12522">
+
+                <span>SRO:   </span>
+
+                SHANKARPALLY - 1524
+
+
+            </font>
+
+            <!--<span style="color:#ff0000;">20/10/2018 05:20 PM</span>-->
+        </div>
+        <br>
+        <div>
+            <table border="1" width="100%" class="table table-bordered table-responsive">
+                <tbody>
+                    <tr style="background-color: #04a7a6;color:#fff;">
+                        <th class="formhd1" style="padding-top: 25px;">S.No.</th>
+                        <th class="formhd1" style="padding-top: 25px;">Description of property</th>
+                        <th class="formhd1">Reg.Date<br>Exe.Date<br>Pres.Date</th>
+                        <th class="formhd1">Nature &<br>Mkt.Value<br>Con. Value</th>
+                        <th class="formhd1" style="padding-top: 25px;">Name of Parties Executant(EX) & Claimants(CL)
+                        </th>
+                        <th class="formhd1">Vol/Pg No<br>CD No<br>Doct No/Year</th>
+                    </tr>
+
+
+
+                    <tr>
+                        <td class="formbg2">
+                            <br/><br/>1.
+                        </td>
+                        <td class="formbg2">
+                            VILL/COL: MOKILA/MOKILA W-B: 0-0 SURVEY: 25/A 25/AA 25/EE1 25/EE2 26/AA2 26/AA3 PLOT: 117
+                            APARTMENT: SRIVARI MEADOWS EXTENT: 300SQ.Yds BUILT: 4254SQ. FT SRIVARI MEADOWSBoundires:
+                            [N]: VILLA NO 118. [S] VILLA NO 116. [E]: 33 FT ROAD. [W]: OPEN SPACE/GARDEN.
+
+
+                        </td>
+                        <td class="formbg2">
+                            (R) 28-08-2025<br/>
+                                        (E) 28-08-2025<br/>
+                                        (P) 28-08-2025
+                        </td>
+                        <td class="formbg2">
+                            0101<br/>
+                                        Sale Deed <br/>
+                                         Mkt.Value:Rs. 5369400<br/>
+                                         Cons.Value:Rs. 33000000
+                        </td>
+                        <td class="formbg2">
+                            1.(EX)VISARA PROJECTS PRIVATE LIMITED <br/> 2.(CL)RAGHAVA RAJU PENUMATSA. <br/> 3.(CL)PENUMATSA GAYATHRI.
+                            <br/> 4.(EX)BONTHU SRINIVASA REDDY <br/> 5.(EX)PEDDIREDDY SRIDHAR <br/> 6.(EX)M/S. VARA PRASAD CONSTRUCTIONS
+                            <br/> 7.(EX)REP-BY: M/S VISARA PROJECTS PRIVATE LIMITED (DEED OF ASSIGNMENT AND POWER OF ATTORNEY HOLDER)
+                            <br/>
+                        </td>
+                        <td class="formbg2">
+                            0/0<br/>
+                            <br/>
+                                        4307/2025<br/>
+                                        [1] of SRO SHANKARPALLY <br/>
+                            <input type="hidden" name="parameter" value="1524"/>
+                            <input type="hidden" name="parameter" value="4307"/>
+                            <input type="hidden" name="parameter" value="2025"/>
+                        </td>
+                    </tr>
+
+
+
+                </tbody>
+            </table>
+            <br>
+            <p style="text-align: left;">Note:</p>
+            <ul>
+                <li>Source for printing Certified Copy and Registered Document is Same.</li>
+                <li>This Report is for Information only.</li>
+            </ul>
+        </div>
+        <br>
+        <div style="text-align: center;">
+            <!--<a href="mv_search-unit_rates.html" target="_self">-->
+            <!--                <button type="submit" class="btn btn-custom" style="width: auto !important;">Print</button>
+                                <button type="submit" class="btn btn-custom" style="width: auto !important;">Excel Report</button>
+                                <button type="submit" class="btn btn-custom" style="width: auto !important;" >Back</button>-->
+            <input type="button" value="Print" onclick="prn()" class="btn btn-custom" style="width: auto !important;"/>&nbsp;&nbsp;
+            <!--<input type="submit" value="Excel Report" onclick="getExcel()" class="btn btn-custom"/>&nbsp;&nbsp;-->
+            <input type="button" value="Excel Report" onClick="tableToExcel('tabAbstract', 'PROGRESS REPORT')" class="btn btn-custom" style="width: auto !important;"/>&nbsp;&nbsp;
+            <input type="button" value="Back" onclick="back1()" class="btn btn-custom" style="width: auto !important;"/>
+            <!--</a>-->
+        </div>
+    </div>
+    <!-- </td>
+         </tr>
+            </table>-->
+
+
+
+
+
+
+
+
+    <style>
+        .footer {
+            /*position: fixed;*/
+            left: 0;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+
+
+    <!DOCTYPE html>
+    <html>
+
+    <body>
+        <div class="clearfix"></div>
+        <br/>
+        <!--<div style="text-align: center; color: #f12522; padding-bottom: 15px;"> The information provided online is updated, and no physical visit is required.</div>-->
+        <!--<div style="height: 50px;"></div>-->
+
+        <div class="container-fluid footer">
+            <div class="container">
+                <div class="col-md-7 col-sm-8 col-xs-12" style="padding-top: 10px;">
+                    <p class="copyright">The information provided online is updated, and no physical visit is
+                        required.<br> Copyright © All rights reserved with Registration & Stamps Dept, Government of Telangana
+                    </p>
+
+                </div>
+                <div class="col-md-5 col-sm-4 col-xs-12 dd">
+                    <p class="copyright"> <span>Designed and Developed By</span> <a href="https://ts.nic.in/"
+                            alt=""><img src="/resources/img/nic.png" style="width: 80px;"/> </a> </p>
+                </div>
+                <!--                <div class="col-sm-8 col-xs-8 dd">
+                    <p class="copyright"><span style="color:#333;"> </span> Copyright © All rights reserved with Registration & Stamps Dept, Government of Telangana</p>
+                </div>-->
+                <!--                <div class="col-sm-4 col-xs-4">
+                    <div class="footer_social">
+                        <ul class="footbot_social">
+                            <li><a class="fb" href="#" target="_self" data-placement="top" data-toggle="tooltip" title="Facebook"><i class="fa fa-facebook"></i></a></li>
+                            <li><a class="twtr" href="#" target="_self" data-placement="top" data-toggle="tooltip" title="Twitter"><i class="fa fa-twitter"></i></a></li>
+                            <li><a class="google" href="#" target="_self" data-placement="top" data-toggle="tooltip" title="Google+"><i class="fa fa-google-plus"></i></a></li>
+                        </ul>
+                    </div>
+                </div>-->
+            </div>
+        </div>
+    </body>
+
+    </html>
+
+
+
+
+    <script src="/resources/js/wow.min.js"></script>
+    <script>
+        // WOW Animation
+                    new WOW().init();
+    </script>
+</body>
+
+</html>

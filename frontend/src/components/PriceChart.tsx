@@ -28,27 +28,52 @@ export function PriceChart() {
     setIsLoading(true);
     try {
       const params = new URLSearchParams({
-        timeframe: filters.timeframe,
-        ...(filters.selectedRegions.length > 0 && { regions: filters.selectedRegions.join(',') })
+        // timeframe: filters.timeframe,
+        // ...(filters.selectedRegions.length > 0 && { regions: filters.selectedRegions.join(',') })
       });
 
-      const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-63ef2dc7/analytics?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`,
-        },
+      // Convert timeframe to startDate and endDate for FastAPI
+      let startDate = '';
+      let endDate = '';
+      const today = new Date();
+      const days = parseInt(filters.timeframe);
+
+      if (!isNaN(days)) {
+        const start = new Date(today);
+        start.setDate(today.getDate() - days);
+        startDate = `${start.getDate().toString().padStart(2, '0')}-${(start.getMonth() + 1).toString().padStart(2, '0')}-${start.getFullYear()}`;
+        endDate = `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
+      }
+
+      if (startDate && endDate) {
+        params.set('startDate', startDate);
+        params.set('endDate', endDate);
+      }
+
+      // Add sroCode filter if any region is selected
+      if (filters.selectedRegions.length > 0) {
+        params.set('sroCode', filters.selectedRegions[0]); // Assuming sroCode is the first selected region for now
+      }
+
+      // const { projectId, publicAnonKey } = await import('../utils/supabase/info');
+      const response = await fetch(`/api/market/value/timeseries_top10_sum?${params}`, {
+        // headers: {
+        //   'Authorization': `Bearer ${publicAnonKey}`,
+        // },
       });
       
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.data.trendData) {
-          const formattedData = result.data.trendData.map((item: any) => ({
-            ...item,
-            formattedDate: new Date(item.date).toLocaleDateString('en-IN', {
+        if (result && result.timeseries_data) {
+          const formattedData = result.timeseries_data.map((item: any) => ({
+            date: item.date,
+            avgPrice: item.sumTop10ConsiderationValue,
+            transactions: 0, // FastAPI timeseries_top10_sum does not provide transactions
+            totalValue: 0, // FastAPI timeseries_top10_sum does not provide totalValue
+            formattedDate: new Date(item.date.split('-').reverse().join('/')).toLocaleDateString('en-IN', {
               month: 'short',
               day: 'numeric'
             }),
-            avgPrice: Math.round(item.avgPrice)
           }));
           setChartData(formattedData);
         }

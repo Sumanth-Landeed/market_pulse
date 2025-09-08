@@ -1,0 +1,194 @@
+import React, { useState, useEffect } from 'react';
+import { useFilters } from './FilterContext';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
+import { TrendingUp, TrendingDown, DollarSign, Activity, BarChart3, Users } from 'lucide-react';
+
+interface MarketData {
+  summary: {
+    totalTransactions: number;
+    totalValue: number;
+    avgPrice: number;
+    avgPricePerSqft: number;
+    priceChange: number;
+  };
+  timeframe: number;
+}
+
+export function MarketOverview() {
+  const { filters } = useFilters();
+  const [marketData, setMarketData] = useState<MarketData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMarketData();
+  }, [filters]);
+
+  const fetchMarketData = async () => {
+    setIsLoading(true);
+    try {
+      // TODO: Replace with your own API endpoint
+      // const params = new URLSearchParams({
+      //   timeframe: filters.timeframe,
+      //   ...(filters.selectedRegions.length > 0 && { regions: filters.selectedRegions.join(',') })
+      // });
+      // const response = await fetch(`/api/analytics?${params}`);
+      // if (response.ok) {
+      //   const result = await response.json();
+      //   if (result.success) {
+      //     setMarketData(result.data);
+      //   }
+      // }
+      
+      // Using null data until custom API is implemented
+      setMarketData(null);
+    } catch (error) {
+      console.error('Error fetching market data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    if (price >= 10000000) {
+      return `₹${(price / 10000000).toFixed(1)}Cr`;
+    } else if (price >= 100000) {
+      return `₹${(price / 100000).toFixed(1)}L`;
+    } else {
+      return `₹${(price / 1000).toFixed(0)}K`;
+    }
+  };
+
+  const formatLargeNumber = (num: number) => {
+    if (num >= 1000000000) {
+      return `₹${(num / 1000000000).toFixed(1)}B`;
+    } else if (num >= 10000000) {
+      return `₹${(num / 10000000).toFixed(1)}Cr`;
+    } else if (num >= 100000) {
+      return `₹${(num / 100000).toFixed(1)}L`;
+    } else {
+      return `₹${(num / 1000).toFixed(0)}K`;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-6">
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (!marketData) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-gray-500">No market data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const { summary } = marketData;
+  const isPositiveChange = summary.priceChange >= 0;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Total Transactions */}
+      <Card className="border-l-4 border-l-[#7134da]">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-gray-600">
+            Total Transactions
+          </CardTitle>
+          <Activity className="h-4 w-4 text-[#7134da]" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-gray-900">
+            {summary.totalTransactions.toLocaleString('en-IN')}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {summary.totalTransactions > 100 ? 'High activity period' : summary.totalTransactions > 50 ? 'Moderate activity' : 'Steady activity'}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Total Value */}
+      <Card className="border-l-4 border-l-green-500">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-gray-600">
+            Total Market Value
+          </CardTitle>
+          <DollarSign className="h-4 w-4 text-green-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-gray-900">
+            {formatLargeNumber(summary.totalValue)}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {summary.totalValue > 500000000 ? 'Strong market volume' : summary.totalValue > 100000000 ? 'Healthy trading activity' : 'Growing market presence'}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Average Price */}
+      <Card className="border-l-4 border-l-blue-500">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-gray-600">
+            Average Price
+          </CardTitle>
+          <BarChart3 className="h-4 w-4 text-blue-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-gray-900">
+            {formatPrice(summary.avgPrice)}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {summary.avgPrice > 5000000 ? 'Premium segment active' : summary.avgPrice > 2000000 ? 'Mid-tier market focus' : 'Entry-level transactions'}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Price Per Sqft with Trend */}
+      <Card className={`border-l-4 ${isPositiveChange ? 'border-l-green-500' : 'border-l-red-500'}`}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-gray-600">
+            Avg Price/Sqft
+          </CardTitle>
+          {isPositiveChange ? (
+            <TrendingUp className="h-4 w-4 text-green-500" />
+          ) : (
+            <TrendingDown className="h-4 w-4 text-red-500" />
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-gray-900">
+            ₹{summary.avgPricePerSqft.toLocaleString('en-IN')}
+          </div>
+          <div className="flex items-center space-x-1">
+            <Badge 
+              variant="outline" 
+              className={`text-xs ${
+                isPositiveChange 
+                  ? 'bg-green-50 text-green-700 border-green-200' 
+                  : 'bg-red-50 text-red-700 border-red-200'
+              }`}
+            >
+              {isPositiveChange ? '+' : ''}{summary.priceChange.toFixed(1)}%
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {Math.abs(summary.priceChange) > 5 ? (isPositiveChange ? 'Strong upward trend' : 'Market correction') : 'Stable vs 30-day trend'}
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

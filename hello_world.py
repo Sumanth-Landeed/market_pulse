@@ -101,6 +101,7 @@ async def get_top10_market_value(date: Optional[str] = None):
                 "$project": {
                     "_id": {"$toString": "$_id"},
                     "sroCode": "$sroCode",
+                    "sroName": "$sroName", # Directly using sroName from market-value-processed
                     "considerationValue": "$considerationValue_numeric",
                     "pricePerExtent": {
                         "$cond": {
@@ -248,12 +249,12 @@ async def get_top10_detailed_market_value(
     mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
     database_name = os.getenv("MONGO_DB_NAME", "mydatabase")
 
-    client = None
+    client = None 
     try:
         client = MongoClient(mongo_uri)
         db = client[database_name]
         collection = db["market-value-processed"]
-
+ 
         today = datetime.now()
         if not startDate or not endDate:
             end_date_obj = today.replace(hour=23, minute=59, second=59, microsecond=999999)
@@ -306,6 +307,7 @@ async def get_top10_detailed_market_value(
                 "$project": {
                     "_id": 0,  # Exclude _id from the final output
                     "sroCode": "$sroCode",
+                    "sroName": "$sroName", # Directly using sroName from market-value-processed
                     "village": "$village",
                     "considerationValue": "$considerationValue_numeric",
                     "pricePerExtent": "$pricePerExtent",
@@ -495,7 +497,31 @@ async def get_timeseries_top10_sum(
             client.close()
 
 
+@app.get("/market/sro_codes")
+async def get_sro_codes():
+    load_dotenv()
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+    database_name = os.getenv("MONGO_DB_NAME", "mydatabase")
 
+    client = None
+    try:
+        client = MongoClient(mongo_uri)
+        db = client[database_name]
+        collection = db["market-value-processed"]
+
+        pipeline = [
+            {"$group": {"_id": {"sroCode": "$sroCode", "sroName": "$sroName"}}},
+            {"$project": {"_id": 0, "sroCode": "$_id.sroCode", "sroName": "$_id.sroName"}},
+            {"$sort": {"sroName": 1}} # Sort by sroName for readability
+        ]
+
+        sro_codes = list(collection.aggregate(pipeline))
+        return {"sro_codes": sro_codes}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        if client:
+            client.close()
 
 app.mount("/", StaticFiles(directory="frontend/build", html=True), name="static")
 

@@ -28,21 +28,53 @@ export function MarketOverview() {
     setIsLoading(true);
     try {
       const params = new URLSearchParams({
-        timeframe: filters.timeframe,
-        ...(filters.selectedRegions.length > 0 && { regions: filters.selectedRegions.join(',') })
+        // timeframe: filters.timeframe, // This is now handled by startDate/endDate
+        // ...(filters.selectedRegions.length > 0 && { regions: filters.selectedRegions.join(',') })
       });
 
-      const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-63ef2dc7/analytics?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`,
-        },
+      // Convert timeframe to startDate and endDate for FastAPI
+      let startDate = '';
+      let endDate = '';
+      const today = new Date();
+      const days = parseInt(filters.timeframe);
+
+      if (!isNaN(days)) {
+        const start = new Date(today);
+        start.setDate(today.getDate() - days);
+        startDate = `${start.getDate().toString().padStart(2, '0')}-${(start.getMonth() + 1).toString().padStart(2, '0')}-${start.getFullYear()}`;
+        endDate = `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
+      }
+
+      if (startDate && endDate) {
+        params.set('startDate', startDate);
+        params.set('endDate', endDate);
+      }
+
+      // Add sroCode filter if any region is selected
+      if (filters.selectedRegions.length > 0) {
+        params.set('sroCode', filters.selectedRegions[0]); // Assuming sroCode is the first selected region for now
+      }
+
+      // const { projectId, publicAnonKey } = await import('../utils/supabase/info');
+      const response = await fetch(`/api/market/value/summary?${params}`, {
+        // headers: {
+        //   'Authorization': `Bearer ${publicAnonKey}`,
+        // },
       });
       
       if (response.ok) {
         const result = await response.json();
-        if (result.success) {
-          setMarketData(result.data);
+        if (result) {
+          setMarketData({
+            summary: {
+              totalTransactions: result.totalTransactions,
+              totalValue: parseFloat(result.totalMarketValue.toFixed(2)),
+              avgPrice: parseFloat(result.averagePricePerTransaction.toFixed(2)),
+              avgPricePerSqft: parseFloat(result.averagePricePerExtent.toFixed(2)),
+              priceChange: 0, // FastAPI /summary does not provide priceChange directly
+            },
+            timeframe: parseInt(filters.timeframe)
+          });
         }
       }
     } catch (error) {

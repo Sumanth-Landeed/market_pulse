@@ -2,12 +2,44 @@ import React, { useState, useEffect } from 'react';
 import { useFilters } from './FilterContext';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
-import { REGIONS } from '../constants/zoneRegionData';
+
+// Hardcoded SRO mapping from API response
+const SRO_MAPPING: Record<string, string> = {
+  "1531": "ABDULLAPURMET",
+  "1601": "Azampura",
+  "1604": "BANJARAHILLS (R.O)",
+  "1609": "BOWENPALLY",
+  "1514": "CHAMPAPET",
+  "1608": "CHARMINAR",
+  "1501": "CHEVELLA",
+  "1602": "CHIKKADPALLY",
+  "1603": "DOODHBOWLI",
+  "1415": "FAROOQ NAGAR",
+  "1525": "GANDIPET",
+  "1610": "GOLCONDA",
+  "1502": "HAYATHNAGAR",
+  "1607": "HYDERABAD (R.O)",
+  "1503": "IBRAHIMPATNAM",
+  "1527": "L.B.NAGAR",
+  "1519": "MAHESWARAM",
+  "1605": "MAREDPALLY",
+  "1515": "PEDDA AMBERPET",
+  "1518": "RAJENDRA NAGAR",
+  "1510": "RANGA REDDY (R.O)",
+  "1611": "S.R.NAGAR",
+  "1513": "SAROORNAGAR",
+  "1606": "SECUNDERABAD",
+  "1522": "SERILINGAMPALLI",
+  "1411": "SHADNAGAR",
+  "1520": "SHAMSHABAD",
+  "1524": "SHANKARPALLY",
+  "1528": "VANASTHALIPURAM"
+};
 
 interface RegionData {
-  id: string;
-  name: string;
-  avgPricePerSqft: number;
+  id: string; // sroCode
+  name: string; // sroName
+  avgPricePerExtent: number;
   isAboveAverage: boolean;
 }
 
@@ -19,75 +51,80 @@ export function HorizontalRegionSelector() {
 
   useEffect(() => {
     fetchRegionPrices();
-  }, [filters.timeframe, filters.dateRange]);
+  }, [filters.dateFrom, filters.dateTo]);
 
   const fetchRegionPrices = async () => {
     setIsLoading(true);
     try {
+      // Convert timeframe to startDate and endDate for FastAPI
+      let startDate = formatDateToDDMMYYYY(filters.dateFrom);
+      let endDate = formatDateToDDMMYYYY(filters.dateTo);
+
+      // Fallback to default if date range is not set in filters
+      if (!startDate || !endDate) {
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+
+        startDate = formatDateToDDMMYYYY(thirtyDaysAgo);
+        endDate = formatDateToDDMMYYYY(today);
+      }
+
       const regionPrices: RegionData[] = [];
       let totalPrice = 0;
       let validRegions = 0;
 
-      // Fetch price data for each region
-      for (const region of REGIONS) {
+      // Make individual API calls for each SRO (since there's no bulk endpoint)
+      for (const [sroCode, sroName] of Object.entries(SRO_MAPPING)) {
         try {
           const params = new URLSearchParams({
-            region: region.id,
-            timeframe: filters.timeframe
+            startDate: startDate,
+            endDate: endDate,
+            sroCode: sroCode
           });
 
-          const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-          const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-63ef2dc7/analytics?${params}`, {
-            headers: {
-              'Authorization': `Bearer ${publicAnonKey}`,
-            },
-          });
+          const response = await fetch(`/api/market/value/summary?${params}`);
 
           if (response.ok) {
             const result = await response.json();
-            if (result.success && result.data.summary.totalTransactions > 0) {
-              const avgPrice = result.data.summary.avgPricePerSqft;
+            if (result && result.totalTransactions > 0) {
+              const avgPrice = result.averagePricePerExtent;
               regionPrices.push({
-                id: region.id,
-                name: region.name,
-                avgPricePerSqft: avgPrice,
+                id: sroCode,
+                name: sroName as string,
+                avgPricePerExtent: avgPrice,
                 isAboveAverage: false // Will be calculated after we have global average
               });
               totalPrice += avgPrice;
               validRegions++;
             } else {
-              // Use fallback data if no real data available
+              // If no data, push SRO with 0 average price
               regionPrices.push({
-                id: region.id,
-                name: region.name,
-                avgPricePerSqft: region.avgPrice / 1000, // Convert to per sqft estimate
+                id: sroCode,
+                name: sroName as string,
+                avgPricePerExtent: 0,
                 isAboveAverage: false
               });
-              totalPrice += region.avgPrice / 1000;
-              validRegions++;
             }
           } else {
-            // Use fallback data
+            console.error(`HTTP error for SRO ${sroName}:`, response.status, response.statusText);
+            // On HTTP error, push SRO with 0 average price
             regionPrices.push({
-              id: region.id,
-              name: region.name,
-              avgPricePerSqft: region.avgPrice / 1000,
+              id: sroCode,
+              name: sroName as string,
+              avgPricePerExtent: 0,
               isAboveAverage: false
             });
-            totalPrice += region.avgPrice / 1000;
-            validRegions++;
           }
         } catch (error) {
-          console.error(`Error fetching data for region ${region.name}:`, error);
-          // Use fallback data
+          console.error(`Error fetching data for SRO ${sroName}:`, error);
+          // On fetch error, push SRO with 0 average price
           regionPrices.push({
-            id: region.id,
-            name: region.name,
-            avgPricePerSqft: region.avgPrice / 1000,
+            id: sroCode,
+            name: sroName as string,
+            avgPricePerExtent: 0,
             isAboveAverage: false
           });
-          totalPrice += region.avgPrice / 1000;
-          validRegions++;
         }
       }
 
@@ -98,12 +135,21 @@ export function HorizontalRegionSelector() {
       // Update isAboveAverage flag for each region
       const updatedRegionData = regionPrices.map(region => ({
         ...region,
-        isAboveAverage: region.avgPricePerSqft > average
+        isAboveAverage: region.avgPricePerExtent > average
       }));
 
       setRegionData(updatedRegionData);
     } catch (error) {
       console.error('Error fetching region prices:', error);
+      // Fallback: create regions with 0 prices
+      const fallbackRegions = Object.entries(SRO_MAPPING).map(([sroCode, sroName]) => ({
+        id: sroCode,
+        name: sroName,
+        avgPricePerExtent: 0,
+        isAboveAverage: false
+      }));
+      setRegionData(fallbackRegions);
+      setGlobalAverage(0);
     } finally {
       setIsLoading(false);
     }
@@ -120,11 +166,25 @@ export function HorizontalRegionSelector() {
   };
 
   const formatPrice = (price: number) => {
-    if (price >= 10000) {
+    if (price >= 10000000) {
+      return `₹${(price / 10000000).toFixed(1)}Cr`;
+    } else if (price >= 100000) {
+      return `₹${(price / 100000).toFixed(1)}L`;
+    } else if (price >= 1000) {
       return `₹${(price / 1000).toFixed(1)}K`;
     } else {
       return `₹${price.toFixed(0)}`;
     }
+  };
+
+  // Helper to format date to DD-MM-YYYY
+  const formatDateToDDMMYYYY = (dateString: string | Date): string => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
   };
 
   // Calculate gradient colors for price badges based on relative pricing
@@ -168,7 +228,7 @@ export function HorizontalRegionSelector() {
   }
 
   // Get min and max prices for gradient calculation
-  const prices = regionData.map(r => r.avgPricePerSqft);
+  const prices = regionData.map(r => r.avgPricePerExtent);
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
 
@@ -186,7 +246,7 @@ export function HorizontalRegionSelector() {
           >
             {regionData.map((region) => {
               const isSelected = filters.selectedRegions.includes(region.id);
-              const gradientStyle = getGradientBadgeStyle(region.avgPricePerSqft, minPrice, maxPrice);
+              const gradientStyle = getGradientBadgeStyle(region.avgPricePerExtent, minPrice, maxPrice);
               
               return (
                 <button
@@ -207,7 +267,7 @@ export function HorizontalRegionSelector() {
                         : gradientStyle
                     }`}
                   >
-                    {formatPrice(region.avgPricePerSqft)}/sqft
+                    {formatPrice(region.avgPricePerExtent)}/Sq.Yd
                   </Badge>
                 </button>
               );

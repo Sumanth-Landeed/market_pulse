@@ -28,29 +28,56 @@ export function TopTransactions() {
     setIsLoading(true);
     try {
       const params = new URLSearchParams({
-        limit: '20', // Increased to ensure scrollable content
-        sort: 'price_desc',
-        timeframe: filters.timeframe
+        // limit: '20',
+        // sort: 'price_desc',
+        // timeframe: filters.timeframe
       });
 
-      // Add region filters if any are selected
-      if (filters.selectedRegions.length > 0) {
-        params.set('regions', filters.selectedRegions.join(','));
+      // Convert timeframe to startDate and endDate for FastAPI
+      let startDate = '';
+      let endDate = '';
+      const today = new Date();
+      const days = parseInt(filters.timeframe);
+
+      if (!isNaN(days)) {
+        const start = new Date(today);
+        start.setDate(today.getDate() - days);
+        startDate = `${start.getDate().toString().padStart(2, '0')}-${(start.getMonth() + 1).toString().padStart(2, '0')}-${start.getFullYear()}`;
+        endDate = `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
       }
 
-      const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-63ef2dc7/transactions?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`,
-        },
+      if (startDate && endDate) {
+        params.set('startDate', startDate);
+        params.set('endDate', endDate);
+      }
+
+      // Add sroCode filter if any region is selected
+      if (filters.selectedRegions.length > 0) {
+        params.set('sroCode', filters.selectedRegions[0]); // Assuming sroCode is the first selected region for now
+      }
+
+      // const { projectId, publicAnonKey } = await import('../utils/supabase/info');
+      const response = await fetch(`/api/market/value/top10_detailed?${params}`, {
+        // headers: {
+        //   'Authorization': `Bearer ${publicAnonKey}`,
+        // },
       });
 
       if (response.ok) {
         const result = await response.json();
-        if (result.success) {
-          setTransactions(result.data);
+        if (result && result.top_documents) {
+          const formattedTransactions: TopTransaction[] = result.top_documents.map((item: any, index: number) => ({
+            id: item._id || `transaction-${index}`, // Assuming _id is present or generate one
+            region: item.sroName || 'N/A', // Use sroName directly for region
+            price: item.considerationValue || 0,
+            pricePerSqft: item.pricePerExtent || 0,
+            area: item.extent || 0,
+            type: item.village || 'N/A', // Use item.village for Village
+            date: item.dateOfRegistration || 'N/A',
+          }));
+          setTransactions(formattedTransactions);
         } else {
-          console.error('Failed to fetch top transactions:', result.error);
+          console.error('Failed to fetch top transactions: No documents found');
           setTransactions([]);
         }
       } else {
@@ -76,7 +103,10 @@ export function TopTransactions() {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    // Convert DD-MM-YYYY to YYYY/MM/DD for reliable Date parsing
+    const [day, month, year] = dateString.split('-');
+    const formattedDateString = `${year}/${month}/${day}`;
+    const date = new Date(formattedDateString);
     return date.toLocaleDateString('en-IN', { 
       month: 'short', 
       day: 'numeric' 
@@ -158,7 +188,7 @@ export function TopTransactions() {
                     </div>
 
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Type</span>
+                      <span className="text-gray-600">Village</span>
                       <Badge variant="outline" className="text-xs">
                         {transaction.type}
                       </Badge>
@@ -169,11 +199,6 @@ export function TopTransactions() {
                         <Calendar className="h-3 w-3" />
                         <span>{formatDate(transaction.date)}</span>
                       </div>
-                      {transaction.pricePerSqft > 5000 && (
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          Premium
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 </div>

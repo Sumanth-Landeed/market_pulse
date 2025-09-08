@@ -31,22 +31,50 @@ export function MarketInsights() {
         insights: 'true'
       });
 
-      // Add region filters if any are selected
-      if (filters.selectedRegions.length > 0) {
-        params.set('regions', filters.selectedRegions.join(','));
+      // Convert timeframe to startDate and endDate for FastAPI
+      let startDate = '';
+      let endDate = '';
+      const today = new Date();
+      const days = parseInt(filters.timeframe);
+
+      if (!isNaN(days)) {
+        const start = new Date(today);
+        start.setDate(today.getDate() - days);
+        startDate = `${start.getDate().toString().padStart(2, '0')}-${(start.getMonth() + 1).toString().padStart(2, '0')}-${start.getFullYear()}`;
+        endDate = `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
       }
 
-      const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-63ef2dc7/market-insights?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`,
-        },
+      if (startDate && endDate) {
+        params.set('startDate', startDate);
+        params.set('endDate', endDate);
+      }
+
+      // Add region filters if any are selected
+      if (filters.selectedRegions.length > 0) {
+        params.set('sroCode', filters.selectedRegions[0]); // Assuming sroCode is the first selected region for now
+      }
+
+      // Remove Supabase related imports and authentication
+      // const { projectId, publicAnonKey } = await import('../utils/supabase/info');
+      const response = await fetch(`/api/market/value/summary?${params}`, {
+        // headers: {
+        //   'Authorization': `Bearer ${publicAnonKey}`,
+        // },
       });
 
       if (response.ok) {
         const result = await response.json();
-        if (result.success) {
-          setInsights(result.data);
+        // Map the FastAPI response to InsightData interface
+        if (result) {
+          setInsights({
+            topPerformingRegion: 'N/A', // FastAPI /summary doesn't provide this directly
+            topPerformingGrowth: 0, // FastAPI /summary doesn't provide this directly
+            lowestPriceRegion: 'N/A', // FastAPI /summary doesn't provide this directly
+            lowestPrice: 0, // FastAPI /summary doesn't provide this directly
+            avgMarketGrowth: parseFloat(result.averagePricePerTransaction.toFixed(2)),
+            totalTransactions: result.totalTransactions,
+            priceRange: { min: 0, max: parseFloat(result.averagePricePerExtent.toFixed(2)) } // Using averagePricePerExtent as max price for now
+          });
         } else {
           // Generate fallback insights
           generateFallbackInsights();
