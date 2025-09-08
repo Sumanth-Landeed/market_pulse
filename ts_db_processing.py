@@ -59,6 +59,10 @@ for doc in src_collection.find({}):
     deed_type_match = DEED_TYPE_REGEX.search(nature_and_value)
     deed_type = deed_type_match.group(1).strip() if deed_type_match else None
 
+    # Keep only Sale Deed transactions
+    if not deed_type or deed_type.lower() != "sale deed":
+        continue
+
     # Build new document with required fields and new columns
     new_doc = {
         "state": doc.get("state"),

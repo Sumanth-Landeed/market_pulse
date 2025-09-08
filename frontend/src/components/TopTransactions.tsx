@@ -11,6 +11,7 @@ interface TopTransaction {
   price: number;
   pricePerSqft: number;
   area: number;
+  unitOfExtent?: string;
   type: string;
   date: string;
 }
@@ -72,6 +73,7 @@ export function TopTransactions() {
             price: item.considerationValue || 0,
             pricePerSqft: item.pricePerExtent || 0,
             area: item.extent || 0,
+            unitOfExtent: item.unitOfExtent || item.extentUnit || '',
             type: item.village || 'N/A', // Use item.village for Village
             date: item.dateOfRegistration || 'N/A',
           }));
@@ -176,15 +178,15 @@ export function TopTransactions() {
                   {/* Transaction details below */}
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Per Sqft</span>
+                      <span className="text-gray-600">Per {transaction.unitOfExtent || 'unit'}</span>
                       <span className="font-medium">
-                        ₹{transaction.pricePerSqft.toLocaleString('en-IN')}
+                        {formatPrice(transaction.pricePerSqft)}
                       </span>
                     </div>
 
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-gray-600">Area</span>
-                      <span className="font-medium">{transaction.area} sqft</span>
+                      <span className="font-medium">{transaction.area} {transaction.unitOfExtent || ''}</span>
                     </div>
 
                     <div className="flex justify-between items-center text-sm">
