@@ -199,6 +199,7 @@ async def get_market_value_summary(
                     "_id": None,  # Group all documents together
                     "totalTransactions": {"$sum": 1},
                     "totalMarketValue": {"$sum": "$considerationVal_numeric"},
+                    "totalAreaSold": {"$sum": "$extent_numeric"},
                     "sumPricePerExtent": {"$sum": "$pricePerExtent"}
                 }
             },
@@ -207,17 +208,18 @@ async def get_market_value_summary(
                     "_id": 0,
                     "totalTransactions": "$totalTransactions",
                     "totalMarketValue": "$totalMarketValue",
-                    "averagePricePerTransaction": {
+                    "totalAreaSold": "$totalAreaSold",
+                    "averagePropertySize": {
                         "$cond": {
                             "if": {"$ne": ["$totalTransactions", 0]},
-                            "then": {"$divide": ["$totalMarketValue", "$totalTransactions"]},
+                            "then": {"$divide": ["$totalAreaSold", "$totalTransactions"]},
                             "else": 0
                         }
                     },
                     "averagePricePerExtent": {
                         "$cond": {
-                            "if": {"$ne": ["$totalTransactions", 0]},
-                            "then": {"$divide": ["$sumPricePerExtent", "$totalTransactions"]},
+                            "if": {"$ne": ["$totalAreaSold", 0]},
+                            "then": {"$divide": ["$totalMarketValue", "$totalAreaSold"]},
                             "else": 0
                         }
                     }
@@ -232,7 +234,8 @@ async def get_market_value_summary(
             return {
                 "totalTransactions": 0,
                 "totalMarketValue": 0,
-                "averagePricePerTransaction": 0,
+                "totalAreaSold": 0,
+                "averagePropertySize": 0,
                 "averagePricePerExtent": 0
             }
 
@@ -579,6 +582,165 @@ async def get_timeseries_top10_sum(
         result = list(collection.aggregate(pipeline))
 
         return {"timeseries_data": result}
+
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        if client:
+            client.close()
+
+
+@app.get("/market/value/daily-intelligence")
+async def get_daily_market_intelligence():
+    load_dotenv()
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+    database_name = os.getenv("MONGO_DB_NAME", "mydatabase")
+
+    client = None
+    try:
+        client = MongoClient(mongo_uri)
+        db = client[database_name]
+        collection = db["market-value-processed"]
+
+        # Find the most recent date with data in the database
+        pipeline_find_date = [
+            {
+                "$addFields": {
+                    "dateOfRegistration_date": {
+                        "$dateFromString": {
+                            "dateString": "$dateOfRegistration",
+                            "format": "%d-%m-%Y"
+                        }
+                    }
+                }
+            },
+            {
+                "$group": {
+                    "_id": None,
+                    "maxDate": {"$max": "$dateOfRegistration_date"}
+                }
+            }
+        ]
+        
+        date_result = list(collection.aggregate(pipeline_find_date))
+        if not date_result or not date_result[0]["maxDate"]:
+            return {"error": "No data found in database"}
+        
+        target_date = date_result[0]["maxDate"]
+
+        start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        # Pipeline to get all required metrics for the target day
+        pipeline = [
+            {
+                "$addFields": {
+                    "dateOfRegistration_date": {
+                        "$dateFromString": {
+                            "dateString": "$dateOfRegistration",
+                            "format": "%d-%m-%Y"
+                        }
+                    },
+                    "considerationVal_numeric": {"$convert": {"input": "$considerationVal", "to": "double", "onError": 0, "onNull": 0}},
+                    "extent_numeric": {"$convert": {"input": "$extent", "to": "double", "onError": 0, "onNull": 0}}
+                }
+            },
+            {"$match": {"dateOfRegistration_date": {"$gte": start_of_day, "$lte": end_of_day}}},
+            {
+                "$addFields": {
+                    "pricePerExtent": {
+                        "$cond": {
+                            "if": {"$ne": ["$extent_numeric", 0]},
+                            "then": {"$divide": ["$considerationVal_numeric", "$extent_numeric"]},
+                            "else": 0
+                        }
+                    }
+                }
+            },
+            {
+                "$group": {
+                    "_id": None,
+                    "totalTransactions": {"$sum": 1},
+                    "allTransactions": {
+                        "$push": {
+                            "considerationVal": "$considerationVal_numeric",
+                            "pricePerExtent": "$pricePerExtent",
+                            "sroName": "$sroName",
+                            "extent": "$extent_numeric"
+                        }
+                    },
+                    "largestAreaSold": {
+                        "$max": {
+                            "extent": "$extent_numeric",
+                            "sroName": "$sroName"
+                        }
+                    },
+                    "regionStats": {
+                        "$push": {
+                            "sroName": "$sroName",
+                            "sroCode": "$sroCode"
+                        }
+                    }
+                }
+            }
+        ]
+
+        result = list(collection.aggregate(pipeline))
+        
+        if not result:
+            return {"error": "No data found for the target date"}
+
+        data = result[0]
+        
+        # Find most active region
+        region_counts = {}
+        for region in data["regionStats"]:
+            sro_name = region["sroName"]
+            region_counts[sro_name] = region_counts.get(sro_name, 0) + 1
+        
+        most_active_region = max(region_counts.items(), key=lambda x: x[1]) if region_counts else ("N/A", 0)
+        
+        # Find costliest and most affordable transactions (filter out 0 values)
+        valid_transactions = [t for t in data["allTransactions"] if t["pricePerExtent"] > 0 and t["considerationVal"] > 0]
+        
+        if valid_transactions:
+            costliest = max(valid_transactions, key=lambda x: x["pricePerExtent"])
+            most_affordable = min(valid_transactions, key=lambda x: x["pricePerExtent"])
+        else:
+            # Fallback to consideration value if no valid price per extent
+            valid_by_value = [t for t in data["allTransactions"] if t["considerationVal"] > 0]
+            if valid_by_value:
+                costliest = max(valid_by_value, key=lambda x: x["considerationVal"])
+                most_affordable = min(valid_by_value, key=lambda x: x["considerationVal"])
+            else:
+                costliest = {"sroName": "N/A", "pricePerExtent": 0, "considerationVal": 0}
+                most_affordable = {"sroName": "N/A", "pricePerExtent": 0, "considerationVal": 0}
+
+        # Format the response
+        response = {
+            "date": target_date.strftime("%d-%m-%Y"),
+            "costliestTransaction": {
+                "region": costliest["sroName"],
+                "pricePerSqYd": costliest["pricePerExtent"],
+                "totalPrice": costliest["considerationVal"]
+            },
+            "mostAffordableTransaction": {
+                "region": most_affordable["sroName"],
+                "pricePerSqYd": most_affordable["pricePerExtent"],
+                "totalPrice": most_affordable["considerationVal"]
+            },
+            "mostActiveRegion": {
+                "region": most_active_region[0],
+                "transactionCount": most_active_region[1]
+            },
+            "totalTransactionsToday": data["totalTransactions"],
+            "largestAreaSold": {
+                "region": data["largestAreaSold"]["sroName"],
+                "areaSqYd": data["largestAreaSold"]["extent"]
+            }
+        }
+
+        return response
 
     except Exception as e:
         return {"error": str(e)}

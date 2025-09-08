@@ -42,23 +42,13 @@ export function MarketIntelligenceStaticSection() {
   const fetchDailyMarketData = async () => {
     setIsLoading(true);
     try {
-      // Always fetch latest day's data - independent of global date filters
-      const params = new URLSearchParams({
-        type: 'daily-intelligence',
-        date: 'latest' // Always get the latest available day
-      });
-
-      const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-63ef2dc7/daily-market-intelligence?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`,
-        },
-      });
+      // Fetch T-2 data (or most recent day with data) - independent of global date filters
+      const response = await fetch('/api/market/value/daily-intelligence');
 
       if (response.ok) {
         const result = await response.json();
-        if (result.success) {
-          setDailyData(result.data);
+        if (result && !result.error) {
+          setDailyData(result);
         } else {
           // Generate fallback daily data
           generateFallbackDailyData();
