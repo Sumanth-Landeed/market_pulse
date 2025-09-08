@@ -52,30 +52,23 @@ export function ActivityTrendsChart() {
         params.set('sroCode', filters.selectedRegions[0]); // Assuming sroCode is the first selected region for now
       }
 
-      // const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-      const response = await fetch(`/api/market/value/summary?${params}`, {
-        // headers: {
-        //   'Authorization': `Bearer ${publicAnonKey}`,
-        // },
-      });
+      // Fetch daily transactions series
+      const response = await fetch(`/api/market/value/transactions_by_date?${params}`);
       
       
       if (response.ok) {
         const result = await response.json();
-        if (result) {
-            // The /market/value/summary API returns aggregated data, not daily trend data directly.
-            // For activity trends, we'll create a single data point for the entire period.
-            const formattedData = [{
-                date: endDate, // Representing the end of the period
-                transactions: result.totalTransactions || 0,
-                totalValue: result.totalMarketValue || 0,
-                formattedDate: new Date(endDate.split('-').reverse().join('/')).toLocaleDateString('en-IN', {
-                    month: 'short',
-                    day: 'numeric'
-                })
-            }];
-            setChartData(formattedData);
-        }
+        const series: Array<{ date: string; totalTransactions: number }> = result?.transactions_by_date || [];
+        const formattedData: ChartData[] = series.map(item => ({
+          date: item.date,
+          transactions: item.totalTransactions || 0,
+          totalValue: 0,
+          formattedDate: new Date(item.date.split('-').reverse().join('/')).toLocaleDateString('en-IN', {
+            month: 'short',
+            day: 'numeric'
+          })
+        }));
+        setChartData(formattedData);
       }
     } catch (error) {
       console.error('Error fetching activity chart data:', error);
