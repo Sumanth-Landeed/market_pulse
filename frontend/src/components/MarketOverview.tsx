@@ -8,7 +8,8 @@ interface MarketData {
   summary: {
     totalTransactions: number;
     totalValue: number;
-    avgPrice: number;
+    totalAreaSold: number;
+    averagePropertySize: number;
     avgPricePerSqft: number;
     priceChange: number;
   };
@@ -69,7 +70,8 @@ export function MarketOverview() {
             summary: {
               totalTransactions: result.totalTransactions,
               totalValue: parseFloat(result.totalMarketValue.toFixed(2)),
-              avgPrice: parseFloat(result.averagePricePerTransaction.toFixed(2)),
+              totalAreaSold: parseFloat(result.totalAreaSold.toFixed(2)),
+              averagePropertySize: parseFloat(result.averagePropertySize.toFixed(2)),
               avgPricePerSqft: parseFloat(result.averagePricePerExtent.toFixed(2)),
               priceChange: 0, // FastAPI /summary does not provide priceChange directly
             },
@@ -90,21 +92,10 @@ export function MarketOverview() {
     } else if (price >= 100000) {
       return `₹${(price / 100000).toFixed(1)}L`;
     } else {
-      return `₹${(price / 1000).toFixed(0)}K`;
+      return `₹${(price / 1000).toFixed(1)}K`;
     }
   };
 
-  const formatLargeNumber = (num: number) => {
-    if (num >= 1000000000) {
-      return `₹${(num / 1000000000).toFixed(1)}B`;
-    } else if (num >= 10000000) {
-      return `₹${(num / 10000000).toFixed(1)}Cr`;
-    } else if (num >= 100000) {
-      return `₹${(num / 100000).toFixed(1)}L`;
-    } else {
-      return `₹${(num / 1000).toFixed(0)}K`;
-    }
-  };
 
   if (isLoading) {
     return (
@@ -155,38 +146,38 @@ export function MarketOverview() {
         </CardContent>
       </Card>
 
-      {/* Total Value */}
+      {/* Total Area Sold */}
       <Card className="border-l-4 border-l-green-500">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-gray-600">
-            Total Market Value
+            Total Area Sold
           </CardTitle>
-          <DollarSign className="h-4 w-4 text-green-500" />
+          <BarChart3 className="h-4 w-4 text-green-500" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-gray-900">
-            {formatLargeNumber(summary.totalValue)}
+            {formatPrice(summary.totalAreaSold)} sq.yd
           </div>
           <p className="text-xs text-muted-foreground">
-            {summary.totalValue > 500000000 ? 'Strong market volume' : summary.totalValue > 100000000 ? 'Healthy trading activity' : 'Growing market presence'}
+            {summary.totalAreaSold > 10000 ? 'High volume activity' : summary.totalAreaSold > 5000 ? 'Moderate trading' : 'Steady market'}
           </p>
         </CardContent>
       </Card>
 
-      {/* Average Price */}
+      {/* Average Property Size */}
       <Card className="border-l-4 border-l-blue-500">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-gray-600">
-            Average Price
+            Average Property Size
           </CardTitle>
-          <BarChart3 className="h-4 w-4 text-blue-500" />
+          <Users className="h-4 w-4 text-blue-500" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-gray-900">
-            {formatPrice(summary.avgPrice)}
+            {summary.averagePropertySize.toFixed(1)} sq.yd
           </div>
           <p className="text-xs text-muted-foreground">
-            {summary.avgPrice > 5000000 ? 'Premium segment active' : summary.avgPrice > 2000000 ? 'Mid-tier market focus' : 'Entry-level transactions'}
+            {summary.averagePropertySize > 500 ? 'Large properties' : summary.averagePropertySize > 200 ? 'Medium properties' : 'Compact properties'}
           </p>
         </CardContent>
       </Card>
@@ -195,7 +186,7 @@ export function MarketOverview() {
       <Card className={`border-l-4 ${isPositiveChange ? 'border-l-green-500' : 'border-l-red-500'}`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-gray-600">
-            Avg Price/Sqft
+            Avg Price/Sq.Yd
           </CardTitle>
           {isPositiveChange ? (
             <TrendingUp className="h-4 w-4 text-green-500" />
@@ -205,7 +196,7 @@ export function MarketOverview() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-gray-900">
-            ₹{summary.avgPricePerSqft.toLocaleString('en-IN')}
+            {formatPrice(summary.avgPricePerSqft)}
           </div>
           <div className="flex items-center space-x-1">
             <Badge 
