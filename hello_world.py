@@ -239,6 +239,80 @@ async def get_market_value_summary(
             client.close()
 
 
+@app.get("/market/value/transactions_by_date")
+async def get_transactions_by_date(
+    startDate: Optional[str] = None,
+    endDate: Optional[str] = None,
+    sroCode: Optional[str] = None
+):
+    load_dotenv()
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+    database_name = os.getenv("MONGO_DB_NAME", "mydatabase")
+
+    client = None
+    try:
+        client = MongoClient(mongo_uri)
+        db = client[database_name]
+        collection = db["market-value-processed"]
+
+        today = datetime.now()
+        if not startDate or not endDate:
+            end_date_obj = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            start_date_obj = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+        else:
+            start_date_obj = datetime.strptime(startDate, "%d-%m-%Y").replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date_obj = datetime.strptime(endDate, "%d-%m-%Y").replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        match_query = {
+            "dateOfRegistration_date": {
+                "$gte": start_date_obj,
+                "$lte": end_date_obj
+            }
+        }
+        if sroCode:
+            match_query["sroCode"] = sroCode
+
+        pipeline = [
+            {
+                "$addFields": {
+                    "dateOfRegistration_date": {
+                        "$dateFromString": {
+                            "dateString": "$dateOfRegistration",
+                            "format": "%d-%m-%Y"
+                        }
+                    }
+                }
+            },
+            {"$match": match_query},
+            {
+                "$group": {
+                    "_id": "$dateOfRegistration_date",
+                    "totalTransactions": {"$sum": 1}
+                }
+            },
+            {"$sort": {"_id": 1}},
+            {
+                "$project": {
+                    "_id": 0,
+                    "date": {"$dateToString": {"format": "%d-%m-%Y", "date": "$_id"}},
+                    "totalTransactions": 1
+                }
+            }
+        ]
+
+        logger.info(f"Match Query for transactions_by_date: {match_query}")
+        logger.info(f"Pipeline for transactions_by_date: {pipeline}")
+
+        result = list(collection.aggregate(pipeline))
+        return {"transactions_by_date": result}
+
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        if client:
+            client.close()
+
+
 @app.get("/market/value/top10_detailed")
 async def get_top10_detailed_market_value(
     startDate: Optional[str] = None,
@@ -514,6 +588,7 @@ async def get_sro_codes():
             {"$project": {"_id": 0, "sroCode": "$_id.sroCode", "sroName": "$_id.sroName"}},
             {"$sort": {"sroName": 1}} # Sort by sroName for readability
         ]
+
 
         sro_codes = list(collection.aggregate(pipeline))
         return {"sro_codes": sro_codes}
