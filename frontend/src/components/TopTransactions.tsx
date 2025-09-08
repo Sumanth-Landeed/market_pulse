@@ -3,7 +3,8 @@ import { useFilters } from './FilterContext';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
-import { TrendingUp, MapPin, Calendar } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
+import { TrendingUp, MapPin, Calendar, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface TopTransaction {
   id: string;
@@ -162,15 +163,29 @@ export function TopTransactions() {
                   key={transaction.id}
                   className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors"
                 >
-                  {/* Top row: Location (left) and Price (right) */}
+                  {/* Top row: Village (left) and Price (right) */}
                   <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="h-3 w-3 text-gray-400" />
-                      <span className="text-sm font-medium text-gray-900">
-                        {transaction.region}
-                      </span>
+                    <div className="flex items-center space-x-2 flex-1 min-w-0">
+                      <MapPin className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        {transaction.type.length > 11 ? (
+                          <Collapsible>
+                            <CollapsibleTrigger className="flex items-center space-x-1 text-sm font-medium text-gray-900 hover:text-[#7134da] transition-colors w-full text-left">
+                              <span className="truncate flex-1">{transaction.type.substring(0, 10)}...</span>
+                              <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="text-sm font-medium text-gray-900 mt-1 break-words">
+                              {transaction.type}
+                            </CollapsibleContent>
+                          </Collapsible>
+                        ) : (
+                          <span className="text-sm font-medium text-gray-900 break-words">
+                            {transaction.type}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-lg font-semibold text-[#7134da]">
+                    <span className="text-lg font-semibold text-[#7134da] ml-2">
                       {formatPrice(transaction.price)}
                     </span>
                   </div>
@@ -190,9 +205,9 @@ export function TopTransactions() {
                     </div>
 
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Village</span>
+                      <span className="text-gray-600">Region</span>
                       <Badge variant="outline" className="text-xs">
-                        {transaction.type}
+                        {transaction.region}
                       </Badge>
                     </div>
 
