@@ -49,9 +49,9 @@ export function PriceTrendsChart() {
         params.set('endDate', endDate);
       }
 
-      // Add sroCode filter if any region is selected
+      // Add sroCode filter if any region is selected (support multiple)
       if (filters.selectedRegions.length > 0) {
-        params.set('sroCode', filters.selectedRegions[0]); // Assuming sroCode is the first selected region for now
+        params.set('sroCode', filters.selectedRegions.join(','));
       }
 
       // const { projectId, publicAnonKey } = await import('../utils/supabase/info');

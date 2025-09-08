@@ -49,9 +49,9 @@ export function MarketInsights() {
         params.set('endDate', endDate);
       }
 
-      // Add region filters if any are selected
+      // Add region filters if any are selected (support multiple)
       if (filters.selectedRegions.length > 0) {
-        params.set('sroCode', filters.selectedRegions[0]); // Assuming sroCode is the first selected region for now
+        params.set('sroCode', filters.selectedRegions.join(','));
       }
 
       // Remove Supabase related imports and authentication

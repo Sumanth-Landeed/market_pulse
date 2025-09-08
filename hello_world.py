@@ -158,7 +158,11 @@ async def get_market_value_summary(
             }
         }
         if sroCode:
-            match_query["sroCode"] = sroCode
+            sro_list = [code.strip() for code in sroCode.split(',') if code.strip()]
+            if len(sro_list) == 1:
+                match_query["sroCode"] = sro_list[0]
+            elif len(sro_list) > 1:
+                match_query["sroCode"] = {"$in": sro_list}
 
         pipeline = [
             {
@@ -270,7 +274,11 @@ async def get_transactions_by_date(
             }
         }
         if sroCode:
-            match_query["sroCode"] = sroCode
+            sro_list = [code.strip() for code in sroCode.split(',') if code.strip()]
+            if len(sro_list) == 1:
+                match_query["sroCode"] = sro_list[0]
+            elif len(sro_list) > 1:
+                match_query["sroCode"] = {"$in": sro_list}
 
         pipeline = [
             {
@@ -344,7 +352,11 @@ async def get_top10_detailed_market_value(
             }
         }
         if sroCode:
-            match_query["sroCode"] = sroCode
+            sro_list = [code.strip() for code in sroCode.split(',') if code.strip()]
+            if len(sro_list) == 1:
+                match_query["sroCode"] = sro_list[0]
+            elif len(sro_list) > 1:
+                match_query["sroCode"] = {"$in": sro_list}
 
         pipeline = [
             {
@@ -517,7 +529,11 @@ async def get_timeseries_top10_sum(
             }
         }
         if sroCode:
-            match_query["sroCode"] = sroCode
+            sro_list = [code.strip() for code in sroCode.split(',') if code.strip()]
+            if len(sro_list) == 1:
+                match_query["sroCode"] = sro_list[0]
+            elif len(sro_list) > 1:
+                match_query["sroCode"] = {"$in": sro_list}
 
         pipeline = [
             {
