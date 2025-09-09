@@ -1003,7 +1003,8 @@ async def get_sro_codes():
         if client:
             client.close()
 
-app.mount("/", StaticFiles(directory="frontend/build", html=True), name="static")
+# Static files are served by Vercel (frontend deployment)
+# app.mount("/", StaticFiles(directory="frontend/build", html=True), name="static")
 
 
 
