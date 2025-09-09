@@ -59,7 +59,7 @@ export function TopTransactions() {
       }
 
       // const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-      const response = await fetch(`/api/market/value/top10_detailed?${params}`, {
+      const response = await fetch(`https://marketpulse-production.up.railway.app/market/value/top10_detailed?${params}`, {
         // headers: {
         //   'Authorization': `Bearer ${publicAnonKey}`,
         // },

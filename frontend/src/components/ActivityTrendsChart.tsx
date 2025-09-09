@@ -53,7 +53,7 @@ export function ActivityTrendsChart() {
       }
 
       // Fetch daily transactions series
-      const response = await fetch(`/api/market/value/transactions_by_date?${params}`);
+      const response = await fetch(`https://marketpulse-production.up.railway.app/market/value/transactions_by_date?${params}`);
       
       
       if (response.ok) {

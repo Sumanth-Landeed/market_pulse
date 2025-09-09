@@ -43,7 +43,7 @@ export function MarketIntelligenceStaticSection() {
     setIsLoading(true);
     try {
       // Fetch T-2 data (or most recent day with data) - independent of global date filters
-      const response = await fetch('/api/market/value/daily-intelligence');
+      const response = await fetch('https://marketpulse-production.up.railway.app/market/value/daily-intelligence');
 
       if (response.ok) {
         const result = await response.json();
@@ -66,7 +66,8 @@ export function MarketIntelligenceStaticSection() {
 
   const generateFallbackDailyData = () => {
     // Generate realistic fallback data for today's market intelligence
-    const regions = ['Banjara Hills', 'Jubilee Hills', 'Gachibowli', 'Madhapur', 'Hitech City', 'Kondapur', 'Kukatpally', 'Miyapur'];
+    const regions = ['Banjara Hills', 'Jubilee Hills', 'Gachibowli', 'Madhapur', 'Hitech City', 'Kondapur', 'Kukatpally', '
+      transac'];
     const randomRegion = () => regions[Math.floor(Math.random() * regions.length)];
     
     const hasRecord = Math.random() > 0.7; // 30% chance of having a market record

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, Activity, BarChart3, Users } from 'lucide-react';
 import { ArrowsOutSimple } from 'phosphor-react';
+import { apiCall } from '../utils/api';
 
 interface MarketData {
   summary: {
@@ -69,12 +70,7 @@ export function MarketOverview() {
         params.set('sroCode', filters.selectedRegions.join(','));
       }
 
-      // const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-      const response = await fetch(`/api/market/value/summary?${params}`, {
-        // headers: {
-        //   'Authorization': `Bearer ${publicAnonKey}`,
-        // },
-      });
+      const response = await apiCall(`/market/value/summary?${params}`);
       
       if (response.ok) {
         const result = await response.json();
