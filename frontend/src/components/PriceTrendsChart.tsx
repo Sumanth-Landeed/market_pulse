@@ -8,8 +8,8 @@ import { TrendingUp, Calendar, BarChart3 } from 'lucide-react';
 
 interface ChartData {
   date: string;
-  avgPrice: number;
-  transactions: number;
+  avgPricePerExtent: number;
+  totalTransactions: number;
   totalValue: number;
   formattedDate: string;
 }
@@ -55,7 +55,7 @@ export function PriceTrendsChart() {
       }
 
       // const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-      const response = await fetch(`/api/market/value/timeseries_top10_sum?${params}`, {
+      const response = await fetch(`/api/market/value/price_per_extent_timeseries?${params}`, {
         // headers: {
         //   'Authorization': `Bearer ${publicAnonKey}`,
         // },
@@ -66,9 +66,9 @@ export function PriceTrendsChart() {
         if (result && result.timeseries_data) {
           const formattedData = result.timeseries_data.map((item: any) => ({
             date: item.date,
-            avgPrice: item.sumTop10ConsiderationValue,
-            transactions: 0, // FastAPI timeseries_top10_sum does not provide transactions
-            totalValue: 0, // FastAPI timeseries_top10_sum does not provide totalValue
+            avgPricePerExtent: item.avgPricePerExtent,
+            totalTransactions: item.totalTransactions,
+            totalValue: item.totalValue,
             formattedDate: new Date(item.date.split('-').reverse().join('/')).toLocaleDateString('en-IN', {
               month: 'short',
               day: 'numeric'
@@ -101,7 +101,10 @@ export function PriceTrendsChart() {
         <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
           <p className="font-medium text-gray-900 mb-1">{label}</p>
           <p className="text-sm text-[#7134da]">
-            Avg Price: {formatPrice(data.avgPrice)}
+            Avg Price/Sq.Yd: {formatPrice(data.avgPricePerExtent)}
+          </p>
+          <p className="text-sm text-gray-600">
+            Transactions: {data.totalTransactions}
           </p>
         </div>
       );
@@ -115,9 +118,9 @@ export function PriceTrendsChart() {
     const latest = chartData[chartData.length - 1];
     const previous = chartData[chartData.length - 2];
     
-    if (!latest || !previous || previous.avgPrice === 0) return null;
+    if (!latest || !previous || previous.avgPricePerExtent === 0) return null;
     
-    const change = ((latest.avgPrice - previous.avgPrice) / previous.avgPrice) * 100;
+    const change = ((latest.avgPricePerExtent - previous.avgPricePerExtent) / previous.avgPricePerExtent) * 100;
     return {
       change: change.toFixed(1),
       isPositive: change >= 0
@@ -176,7 +179,7 @@ export function PriceTrendsChart() {
         ) : (
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis 
                   dataKey="formattedDate" 
@@ -189,11 +192,12 @@ export function PriceTrendsChart() {
                   fontSize={12}
                   tickLine={false}
                   tickFormatter={formatPrice}
+                  width={50}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Area
                   type="monotone"
-                  dataKey="avgPrice"
+                  dataKey="avgPricePerExtent"
                   stroke="#7134da"
                   strokeWidth={2}
                   fill="url(#priceGradient)"

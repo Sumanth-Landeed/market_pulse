@@ -101,7 +101,7 @@ export function TopTransactions() {
     } else if (price >= 100000) {
       return `₹${(price / 100000).toFixed(1)}L`;
     } else {
-      return `₹${(price / 1000).toFixed(0)}K`;
+      return `₹${(price / 1000).toFixed(1)}K`;
     }
   };
 

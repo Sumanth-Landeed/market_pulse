@@ -6,6 +6,7 @@ import { Input } from './ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import { TrendingUp, MapPin, Activity, Calendar as CalendarIcon } from 'lucide-react';
+import { Lightning } from 'phosphor-react';
 
 export function DashboardHeader() {
   const { filters, setTimeframe, setDateRange } = useFilters();
@@ -55,12 +56,18 @@ export function DashboardHeader() {
         <div className="flex justify-between items-center py-4">
           {/* Logo and Title */}
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-[#7134da] rounded-lg flex items-center justify-center">
-              <TrendingUp className="h-5 w-5 text-white" />
+            <div className="w-8 h-8 bg-white rounded-lg border border-gray-200 flex items-center justify-center">
+              <img 
+                src="https://landeed.imgix.net/Logo/logo%20vector.svg" 
+                alt="Landeed Logo" 
+                className="w-6 h-6"
+              />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Land Prices Platform</h1>
-              <p className="text-sm text-gray-500">Real-time market intelligence for Hyderabad</p>
+              <h1 className="text-xl font-bold text-gray-900">
+                Market Pul<Lightning size={24} className="text-[#7134da] inline-block align-middle" />e
+              </h1>
+              <p className="text-sm text-gray-500">by Landeed</p>
             </div>
           </div>
 

@@ -1,7 +1,9 @@
+import React from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { MapPin, TrendingUp, Filter } from "lucide-react";
+import { Lightning } from "phosphor-react";
 
 export function Header() {
   return (
@@ -9,12 +11,18 @@ export function Header() {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo and Title */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
-            <TrendingUp className="w-6 h-6 text-primary-foreground" />
+          <div className="flex items-center justify-center w-10 h-10 bg-white rounded-lg border border-gray-200">
+            <img 
+              src="https://landeed.imgix.net/Logo/logo%20vector.svg" 
+              alt="Landeed Logo" 
+              className="w-8 h-8"
+            />
           </div>
           <div>
-            <h1 className="text-foreground font-medium">LandPrices</h1>
-            <p className="text-muted-foreground text-sm">Market Intelligence Platform</p>
+            <h1 className="text-foreground font-medium">
+              Market Pulse
+            </h1>
+            <p className="text-muted-foreground text-sm">by Landeed</p>
           </div>
         </div>
 

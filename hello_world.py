@@ -3,6 +3,7 @@ import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timedelta
 from typing import Optional
 import logging
@@ -13,6 +14,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with your frontend domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # @app.get("/")
 # async def read_root():
@@ -227,17 +237,132 @@ async def get_market_value_summary(
             }
         ]
 
-        result = list(collection.aggregate(pipeline))
-        if result:
-            return result[0]
-        else:
-            return {
-                "totalTransactions": 0,
-                "totalMarketValue": 0,
-                "totalAreaSold": 0,
-                "averagePropertySize": 0,
-                "averagePricePerExtent": 0
+        # Get current period data
+        current_result = list(collection.aggregate(pipeline))
+        current_data = current_result[0] if current_result else {
+            "totalTransactions": 0,
+            "totalMarketValue": 0,
+            "totalAreaSold": 0,
+            "averagePropertySize": 0,
+            "averagePricePerExtent": 0
+        }
+
+        # Calculate previous period dates
+        period_length = (end_date_obj - start_date_obj).days + 1
+        previous_end_date = start_date_obj - timedelta(days=1)
+        previous_start_date = previous_end_date - timedelta(days=period_length - 1)
+
+        # Build previous period match query
+        previous_match_query = {
+            "dateOfRegistration_date": {
+                "$gte": previous_start_date,
+                "$lte": previous_end_date
             }
+        }
+        if sroCode:
+            sro_list = [code.strip() for code in sroCode.split(',') if code.strip()]
+            if len(sro_list) == 1:
+                previous_match_query["sroCode"] = sro_list[0]
+            elif len(sro_list) > 1:
+                previous_match_query["sroCode"] = {"$in": sro_list}
+
+        # Get previous period data
+        previous_pipeline = [
+            {
+                "$addFields": {
+                    "dateOfRegistration_date": {
+                        "$dateFromString": {
+                            "dateString": "$dateOfRegistration",
+                            "format": "%d-%m-%Y"
+                        }
+                    }
+                }
+            },
+            {"$match": previous_match_query},
+            {
+                "$addFields": {
+                    "considerationVal_numeric": {"$convert": {"input": "$considerationVal", "to": "double", "onError": 0, "onNull": 0}},
+                    "extent_numeric": {"$convert": {"input": "$extent", "to": "double", "onError": 0, "onNull": 0}}
+                }
+            },
+            {
+                "$addFields": {
+                    "pricePerExtent": {
+                        "$cond": {
+                            "if": {"$ne": ["$extent_numeric", 0]},
+                            "then": {"$divide": ["$considerationVal_numeric", "$extent_numeric"]},
+                            "else": 0
+                        }
+                    }
+                }
+            },
+            {
+                "$group": {
+                    "_id": None,
+                    "totalTransactions": {"$sum": 1},
+                    "totalMarketValue": {"$sum": "$considerationVal_numeric"},
+                    "totalAreaSold": {"$sum": "$extent_numeric"},
+                    "sumPricePerExtent": {"$sum": "$pricePerExtent"}
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "totalTransactions": "$totalTransactions",
+                    "totalMarketValue": "$totalMarketValue",
+                    "totalAreaSold": "$totalAreaSold",
+                    "averagePropertySize": {
+                        "$cond": {
+                            "if": {"$ne": ["$totalTransactions", 0]},
+                            "then": {"$divide": ["$totalAreaSold", "$totalTransactions"]},
+                            "else": 0
+                        }
+                    },
+                    "averagePricePerExtent": {
+                        "$cond": {
+                            "if": {"$ne": ["$totalAreaSold", 0]},
+                            "then": {"$divide": ["$totalMarketValue", "$totalAreaSold"]},
+                            "else": 0
+                        }
+                    }
+                }
+            }
+        ]
+
+        previous_result = list(collection.aggregate(previous_pipeline))
+        previous_data = previous_result[0] if previous_result else {
+            "totalTransactions": 0,
+            "totalMarketValue": 0,
+            "totalAreaSold": 0,
+            "averagePropertySize": 0,
+            "averagePricePerExtent": 0
+        }
+
+        # Calculate comparisons
+        def calculate_comparison(current, previous, is_higher_better=True):
+            if previous == 0:
+                return 0
+            diff = current - previous
+            if is_higher_better:
+                return diff
+            else:
+                return -diff  # For price, lower is better
+
+        return {
+            **current_data,
+            "previousPeriod": {
+                "totalTransactions": previous_data["totalTransactions"],
+                "totalAreaSold": previous_data["totalAreaSold"],
+                "averagePropertySize": previous_data["averagePropertySize"],
+                "averagePricePerExtent": previous_data["averagePricePerExtent"]
+            },
+            "comparisons": {
+                "transactionsChange": calculate_comparison(current_data["totalTransactions"], previous_data["totalTransactions"], True),
+                "areaChange": calculate_comparison(current_data["totalAreaSold"], previous_data["totalAreaSold"], True),
+                "propertySizeChange": calculate_comparison(current_data["averagePropertySize"], previous_data["averagePropertySize"], True),
+                "priceChange": calculate_comparison(current_data["averagePricePerExtent"], previous_data["averagePricePerExtent"], False)
+            }
+        }
 
     except Exception as e:
         return {"error": str(e)}
@@ -581,6 +706,108 @@ async def get_timeseries_top10_sum(
 
         result = list(collection.aggregate(pipeline))
 
+        return {"timeseries_data": result}
+
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        if client:
+            client.close()
+
+
+@app.get("/market/value/price_per_extent_timeseries")
+async def get_price_per_extent_timeseries(
+    startDate: Optional[str] = None,
+    endDate: Optional[str] = None,
+    sroCode: Optional[str] = None
+):
+    load_dotenv()
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+    database_name = os.getenv("MONGO_DB_NAME", "mydatabase")
+
+    client = None
+    try:
+        client = MongoClient(mongo_uri)
+        db = client[database_name]
+        collection = db["market-value-processed"]
+
+        today = datetime.now()
+        if not startDate or not endDate:
+            end_date_obj = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            start_date_obj = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+        else:
+            start_date_obj = datetime.strptime(startDate, "%d-%m-%Y").replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date_obj = datetime.strptime(endDate, "%d-%m-%Y").replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        # Build match query
+        match_query = {
+            "dateOfRegistration_date": {
+                "$gte": start_date_obj,
+                "$lte": end_date_obj
+            }
+        }
+        if sroCode:
+            sro_list = [code.strip() for code in sroCode.split(',') if code.strip()]
+            if len(sro_list) == 1:
+                match_query["sroCode"] = sro_list[0]
+            elif len(sro_list) > 1:
+                match_query["sroCode"] = {"$in": sro_list}
+
+        pipeline = [
+            {
+                "$addFields": {
+                    "dateOfRegistration_date": {
+                        "$dateFromString": {
+                            "dateString": "$dateOfRegistration",
+                            "format": "%d-%m-%Y"
+                        }
+                    }
+                }
+            },
+            {"$match": match_query},
+            {
+                "$addFields": {
+                    "considerationVal_numeric": {"$convert": {"input": "$considerationVal", "to": "double", "onError": 0, "onNull": 0}},
+                    "extent_numeric": {"$convert": {"input": "$extent", "to": "double", "onError": 0, "onNull": 0}}
+                }
+            },
+            {
+                "$addFields": {
+                    "pricePerExtent": {
+                        "$cond": {
+                            "if": {"$ne": ["$extent_numeric", 0]},
+                            "then": {"$divide": ["$considerationVal_numeric", "$extent_numeric"]},
+                            "else": 0
+                        }
+                    }
+                }
+            },
+            {
+                "$match": {
+                    "pricePerExtent": {"$gt": 0}  # Only include transactions with valid price per extent
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$dateOfRegistration_date",
+                    "avgPricePerExtent": {"$avg": "$pricePerExtent"},
+                    "totalTransactions": {"$sum": 1},
+                    "totalValue": {"$sum": "$considerationVal_numeric"}
+                }
+            },
+            {"$sort": {"_id": 1}},
+            {
+                "$project": {
+                    "_id": 0,
+                    "date": {"$dateToString": {"format": "%d-%m-%Y", "date": "$_id"}},
+                    "avgPricePerExtent": 1,
+                    "totalTransactions": 1,
+                    "totalValue": 1
+                }
+            }
+        ]
+
+        result = list(collection.aggregate(pipeline))
         return {"timeseries_data": result}
 
     except Exception as e:
