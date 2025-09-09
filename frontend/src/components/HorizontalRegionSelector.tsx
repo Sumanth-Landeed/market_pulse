@@ -83,7 +83,7 @@ export function HorizontalRegionSelector() {
             sroCode: sroCode
           });
 
-          const response = await fetch(`/api/market/value/summary?${params}`);
+          const response = await fetch(`https://marketpulse-production.up.railway.app/market/value/summary?${params}`);
 
           if (response.ok) {
             const result = await response.json();

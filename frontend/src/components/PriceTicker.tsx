@@ -37,7 +37,7 @@ export function PriceTicker() {
       
       // For demonstration, use a date that is known to have data
       const dateToFetch = '26-08-2025'; 
-      const response = await fetch(`/api/market/value/top10?date=${dateToFetch}`, {
+      const response = await fetch(`https://marketpulse-production.up.railway.app/market/value/top10?date=${dateToFetch}`, {
         headers: {
           'Content-Type': 'application/json',
         },

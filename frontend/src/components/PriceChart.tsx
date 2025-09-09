@@ -56,7 +56,7 @@ export function PriceChart() {
       }
 
       // const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-      const response = await fetch(`/api/market/value/timeseries_top10_sum?${params}`, {
+      const response = await fetch(`https://marketpulse-production.up.railway.app/market/value/timeseries_top10_sum?${params}`, {
         // headers: {
         //   'Authorization': `Bearer ${publicAnonKey}`,
         // },

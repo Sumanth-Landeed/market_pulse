@@ -56,7 +56,7 @@ export function MarketInsights() {
 
       // Remove Supabase related imports and authentication
       // const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-      const response = await fetch(`/api/market/value/summary?${params}`, {
+      const response = await fetch(`https://marketpulse-production.up.railway.app/market/value/summary?${params}`, {
         // headers: {
         //   'Authorization': `Bearer ${publicAnonKey}`,
         // },
