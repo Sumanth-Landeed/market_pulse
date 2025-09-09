@@ -3,6 +3,9 @@
   "outputDirectory": "frontend/build",
   "installCommand": "cd frontend && npm install",
   "framework": "vite",
+  "env": {
+    "VITE_API_URL": "https://marketpulse-production.up.railway.app"
+  },
   "rewrites": [
     {
       "source": "/(.*)",
