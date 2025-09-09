@@ -1006,5 +1006,105 @@ async def get_sro_codes():
 # Static files are served by Vercel (frontend deployment)
 # app.mount("/", StaticFiles(directory="frontend/build", html=True), name="static")
 
+@app.get("/market/value/summary/by-sro")
+async def get_summary_by_sro(
+    startDate: Optional[str] = None,
+    endDate: Optional[str] = None,
+):
+    """
+    Returns per-SRO summary in a single call for the given date range:
+    - sroCode, sroName
+    - totalTransactions
+    - totalConsideration
+    - totalArea
+    - averagePricePerExtent = totalConsideration / totalArea (0 if area==0)
+    """
+    load_dotenv()
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+    database_name = os.getenv("MONGO_DB_NAME", "mydatabase")
+
+    client = None
+    try:
+        client = MongoClient(mongo_uri)
+        db = client[database_name]
+        collection = db["market-value-processed"]
+
+        # Date range handling (default last 30 days)
+        today = datetime.now()
+        if not startDate or not endDate:
+            end_date_obj = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            start_date_obj = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+        else:
+            start_date_obj = datetime.strptime(startDate, "%d-%m-%Y").replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date_obj = datetime.strptime(endDate, "%d-%m-%Y").replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        match_query = {
+            "dateOfRegistration_date": {
+                "$gte": start_date_obj,
+                "$lte": end_date_obj,
+            }
+        }
+
+        pipeline = [
+            {
+                "$addFields": {
+                    "dateOfRegistration_date": {
+                        "$cond": [
+                            {"$ifNull": ["$dateOfRegistration_date", False]},
+                            "$dateOfRegistration_date",
+                            {"$dateFromString": {"dateString": "$dateOfRegistration", "format": "%d-%m-%Y"}},
+                        ]
+                    },
+                    "considerationValue_numeric": {
+                        "$convert": {"input": "$considerationVal", "to": "double", "onError": 0, "onNull": 0}
+                    },
+                    "extent_numeric": {
+                        "$convert": {"input": "$extent", "to": "double", "onError": 0, "onNull": 0}
+                    },
+                }
+            },
+            {"$match": match_query},
+            {
+                "$group": {
+                    "_id": {"sroCode": "$sroCode", "sroName": "$sroName"},
+                    "totalTransactions": {"$sum": 1},
+                    "totalConsideration": {"$sum": "$considerationValue_numeric"},
+                    "totalArea": {"$sum": "$extent_numeric"},
+                }
+            },
+            {
+                "$addFields": {
+                    "averagePricePerExtent": {
+                        "$cond": [
+                            {"$gt": ["$totalArea", 0]},
+                            {"$divide": ["$totalConsideration", "$totalArea"]},
+                            0,
+                        ]
+                    }
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "sroCode": "$_id.sroCode",
+                    "sroName": "$_id.sroName",
+                    "totalTransactions": 1,
+                    "totalConsideration": 1,
+                    "totalArea": 1,
+                    "averagePricePerExtent": 1,
+                }
+            },
+            {"$sort": {"averagePricePerExtent": -1}},
+        ]
+
+        data = list(collection.aggregate(pipeline))
+        return {"startDate": startDate, "endDate": endDate, "regions": data}
+
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        if client:
+            client.close()
+
 
 

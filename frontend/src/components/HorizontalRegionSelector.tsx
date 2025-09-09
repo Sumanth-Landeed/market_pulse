@@ -70,75 +70,36 @@ export function HorizontalRegionSelector() {
         endDate = formatDateToDDMMYYYY(today);
       }
 
-      const regionPrices: RegionData[] = [];
-      let totalPrice = 0;
-      let validRegions = 0;
+      const params = new URLSearchParams({ startDate, endDate });
+      const response = await fetch(`https://marketpulse-production.up.railway.app/market/value/summary/by-sro?${params}`);
+      if (response.ok) {
+        const result = await response.json();
+        const regions = Array.isArray(result?.regions) ? result.regions : [];
 
-      // Make individual API calls for each SRO (since there's no bulk endpoint)
-      for (const [sroCode, sroName] of Object.entries(SRO_MAPPING)) {
-        try {
-          const params = new URLSearchParams({
-            startDate: startDate,
-            endDate: endDate,
-            sroCode: sroCode
-          });
-
-          const response = await fetch(`https://marketpulse-production.up.railway.app/market/value/summary?${params}`);
-
-          if (response.ok) {
-            const result = await response.json();
-            if (result && result.totalTransactions > 0) {
-              const avgPrice = result.averagePricePerExtent;
-              regionPrices.push({
-                id: sroCode,
-                name: sroName as string,
-                avgPricePerExtent: avgPrice,
-                isAboveAverage: false // Will be calculated after we have global average
-              });
-              totalPrice += avgPrice;
-              validRegions++;
-            } else {
-              // If no data, push SRO with 0 average price
-              regionPrices.push({
-                id: sroCode,
-                name: sroName as string,
-                avgPricePerExtent: 0,
-                isAboveAverage: false
-              });
-            }
-          } else {
-            console.error(`HTTP error for SRO ${sroName}:`, response.status, response.statusText);
-            // On HTTP error, push SRO with 0 average price
-            regionPrices.push({
-              id: sroCode,
-              name: sroName as string,
-              avgPricePerExtent: 0,
-              isAboveAverage: false
-            });
-          }
-        } catch (error) {
-          console.error(`Error fetching data for SRO ${sroName}:`, error);
-          // On fetch error, push SRO with 0 average price
-          regionPrices.push({
+        // Map API response to RegionData, include only known SROs in mapping (preserve order)
+        const regionPrices: RegionData[] = Object.entries(SRO_MAPPING).map(([sroCode, sroName]) => {
+          const found = regions.find((r: any) => r.sroCode === sroCode);
+          const avgPrice = found?.averagePricePerExtent || 0;
+          return {
             id: sroCode,
-            name: sroName as string,
-            avgPricePerExtent: 0,
-            isAboveAverage: false
-          });
-        }
+            name: sroName,
+            avgPricePerExtent: avgPrice,
+            isAboveAverage: false,
+          }
+        });
+
+        const valid = regionPrices.filter(r => r.avgPricePerExtent > 0);
+        const average = valid.length > 0 ? valid.reduce((a, b) => a + b.avgPricePerExtent, 0) / valid.length : 0;
+        setGlobalAverage(average);
+
+        const updatedRegionData = regionPrices.map(r => ({
+          ...r,
+          isAboveAverage: r.avgPricePerExtent > average
+        }));
+        setRegionData(updatedRegionData);
+      } else {
+        throw new Error(`HTTP ${response.status}`);
       }
-
-      // Calculate global average
-      const average = validRegions > 0 ? totalPrice / validRegions : 0;
-      setGlobalAverage(average);
-
-      // Update isAboveAverage flag for each region
-      const updatedRegionData = regionPrices.map(region => ({
-        ...region,
-        isAboveAverage: region.avgPricePerExtent > average
-      }));
-
-      setRegionData(updatedRegionData);
     } catch (error) {
       console.error('Error fetching region prices:', error);
       // Fallback: create regions with 0 prices
