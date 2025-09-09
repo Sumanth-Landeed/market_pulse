@@ -66,8 +66,7 @@ export function MarketIntelligenceStaticSection() {
 
   const generateFallbackDailyData = () => {
     // Generate realistic fallback data for today's market intelligence
-    const regions = ['Banjara Hills', 'Jubilee Hills', 'Gachibowli', 'Madhapur', 'Hitech City', 'Kondapur', 'Kukatpally', '
-      transac'];
+    const regions = ['Banjara Hills', 'Jubilee Hills', 'Gachibowli', 'Madhapur', 'Hitech City', 'Kondapur', 'Kukatpally', 'Banjara Hills', 'Jubilee Hills'];
     const randomRegion = () => regions[Math.floor(Math.random() * regions.length)];
     
     const hasRecord = Math.random() > 0.7; // 30% chance of having a market record
