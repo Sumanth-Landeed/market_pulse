@@ -58,31 +58,44 @@ export function TopTransactions() {
         params.set('sroCode', filters.selectedRegions.join(','));
       }
 
-      // const { projectId, publicAnonKey } = await import('../utils/supabase/info');
-      const response = await fetch(`https://marketpulse-production.up.railway.app/market/value/top10_detailed?${params}`, {
-        // headers: {
-        //   'Authorization': `Bearer ${publicAnonKey}`,
-        // },
-      });
+      // Retry logic to handle cold starts/initial empty responses
+      const fetchWithRetry = async (attempts: number, delayMs: number): Promise<Response> => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        try {
+          const res = await fetch(`https://marketpulse-production.up.railway.app/market/value/top10_detailed?${params}` , { signal: controller.signal });
+          clearTimeout(timeout);
+          if (!res.ok && attempts > 0) {
+            await new Promise(r => setTimeout(r, delayMs));
+            return fetchWithRetry(attempts - 1, delayMs * 2);
+          }
+          return res;
+        } catch (e) {
+          clearTimeout(timeout);
+          if (attempts > 0) {
+            await new Promise(r => setTimeout(r, delayMs));
+            return fetchWithRetry(attempts - 1, delayMs * 2);
+          }
+          throw e;
+        }
+      };
+
+      const response = await fetchWithRetry(2, 500);
 
       if (response.ok) {
         const result = await response.json();
-        if (result && result.top_documents) {
-          const formattedTransactions: TopTransaction[] = result.top_documents.map((item: any, index: number) => ({
-            id: item._id || `transaction-${index}`, // Assuming _id is present or generate one
-            region: item.sroName || 'N/A', // Use sroName directly for region
-            price: item.considerationValue || 0,
-            pricePerSqft: item.pricePerExtent || 0,
-            area: item.extent || 0,
-            unitOfExtent: item.unitOfExtent || item.extentUnit || '',
-            type: item.village || 'N/A', // Use item.village for Village
-            date: item.dateOfRegistration || 'N/A',
-          }));
-          setTransactions(formattedTransactions);
-        } else {
-          console.error('Failed to fetch top transactions: No documents found');
-          setTransactions([]);
-        }
+        const docs = result?.top_documents || [];
+        const formattedTransactions: TopTransaction[] = docs.map((item: any, index: number) => ({
+          id: item._id || `transaction-${index}`,
+          region: item.sroName || 'N/A',
+          price: item.considerationValue || 0,
+          pricePerSqft: item.pricePerExtent || 0,
+          area: item.extent || 0,
+          unitOfExtent: item.unitOfExtent || item.extentUnit || '',
+          type: item.village || 'N/A',
+          date: item.dateOfRegistration || 'N/A',
+        }));
+        setTransactions(formattedTransactions);
       } else {
         console.error('HTTP error:', response.status);
         setTransactions([]);
